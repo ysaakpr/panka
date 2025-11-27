@@ -8,6 +8,15 @@ This repository contains the complete design, implementation plan, and documenta
 
 ### For Platform Engineers / Implementers
 
+**🤖 AI-Assisted Development:**
+
+1. **[AI_AGENT_DEVELOPMENT_GUIDE.md](docs/AI_AGENT_DEVELOPMENT_GUIDE.md)** ⭐⭐⭐⭐⭐ **START HERE for AI Development**
+   - Comprehensive guide to safely using AI agents
+   - Phase-by-phase AI integration strategy
+   - Prompt engineering best practices
+   - Security considerations and review checklists
+   - Example workflows and success metrics
+
 **Setup & Administration:**
 
 1. **[MULTI_TENANCY.md](docs/MULTI_TENANCY.md)** ⭐⭐⭐ **Multi-tenant architecture**

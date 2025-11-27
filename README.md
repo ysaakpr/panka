@@ -503,6 +503,17 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 
 ## 📚 Documentation
 
+### 🤖 Building Panka? AI-Assisted Development!
+
+**[AI_AGENT_DEVELOPMENT_GUIDE.md](docs/AI_AGENT_DEVELOPMENT_GUIDE.md)** ⭐⭐⭐⭐⭐ - Comprehensive guide for developers
+
+This project is designed to be built with AI assistance! The guide covers:
+- Safe AI agent usage (Claude, Copilot, Cursor)
+- Phase-by-phase development strategy
+- Example prompts and workflows
+- Security and testing best practices
+- 2-3x faster development with maintained quality
+
 ### 🚀 New to Panka? Start Here!
 
 1. **[QUICKSTART.md](QUICKSTART.md)** ⭐⭐⭐ - 5-minute overview of how panka works
