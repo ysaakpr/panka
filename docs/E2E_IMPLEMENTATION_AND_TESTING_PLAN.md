@@ -1,6 +1,6 @@
 # End-to-End Implementation and Testing Plan
 
-This document provides a complete implementation and testing strategy for the deployer system, from initial setup through production deployment.
+This document provides a complete implementation and testing strategy for the panka system, from initial setup through production deployment.
 
 ---
 
@@ -32,12 +32,12 @@ This document provides a complete implementation and testing strategy for the de
 
 ```bash
 # Initialize Go module
-mkdir -p ~/work/deployer
-cd ~/work/deployer
-go mod init github.com/company/deployer
+mkdir -p ~/work/panka
+cd ~/work/panka
+go mod init github.com/company/panka
 
 # Create project structure
-mkdir -p cmd/deployer
+mkdir -p cmd/panka
 mkdir -p pkg/{state,lock,parser,graph,reconciler,executor,pulumi,components}
 mkdir -p internal/{aws,config,logger,metrics}
 mkdir -p test/{unit,integration,e2e,fixtures}
@@ -46,7 +46,7 @@ mkdir -p scripts
 mkdir -p examples
 
 # Create main.go
-cat > cmd/deployer/main.go << 'EOF'
+cat > cmd/panka/main.go << 'EOF'
 package main
 
 import (
@@ -55,14 +55,14 @@ import (
 )
 
 func main() {
-    fmt.Println("Deployer v0.1.0")
+    fmt.Println("Panka v0.1.0")
     os.Exit(0)
 }
 EOF
 
 # Build and verify
-go build -o bin/deployer ./cmd/deployer
-./bin/deployer
+go build -o bin/panka ./cmd/panka
+./bin/panka
 ```
 
 **Day 3: CI/CD Setup**
@@ -106,7 +106,7 @@ jobs:
           files: ./coverage.txt
       
       - name: Build
-        run: go build -v ./cmd/deployer
+        run: go build -v ./cmd/panka
 
   integration-test:
     runs-on: ubuntu-latest
@@ -139,18 +139,18 @@ Create `Makefile`:
 .PHONY: build test lint clean install dev
 
 # Build settings
-BINARY_NAME=deployer
+BINARY_NAME=panka
 VERSION?=0.1.0
 BUILD_DIR=bin
 LDFLAGS=-ldflags "-X main.Version=$(VERSION)"
 
 # Build the binary
 build:
-	go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/deployer
+	go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/panka
 
 # Install the binary
 install:
-	go install $(LDFLAGS) ./cmd/deployer
+	go install $(LDFLAGS) ./cmd/panka
 
 # Run tests
 test:
@@ -290,7 +290,7 @@ terraform {
   
   backend "s3" {
     bucket         = "company-terraform-state"
-    key            = "deployer/infrastructure/terraform.tfstate"
+    key            = "panka/infrastructure/terraform.tfstate"
     region         = "us-east-1"
     encrypt        = true
     dynamodb_table = "terraform-state-lock"
@@ -302,7 +302,7 @@ provider "aws" {
   
   default_tags {
     tags = {
-      Project     = "deployer"
+      Project     = "panka"
       ManagedBy   = "terraform"
       Environment = var.environment
     }
@@ -310,24 +310,24 @@ provider "aws" {
 }
 
 # S3 Bucket for State
-resource "aws_s3_bucket" "deployer_state" {
-  bucket = "${var.prefix}-deployer-state-${var.environment}"
+resource "aws_s3_bucket" "panka_state" {
+  bucket = "${var.prefix}-panka-state-${var.environment}"
   
   tags = {
-    Name = "deployer-state"
+    Name = "panka-state"
   }
 }
 
-resource "aws_s3_bucket_versioning" "deployer_state" {
-  bucket = aws_s3_bucket.deployer_state.id
+resource "aws_s3_bucket_versioning" "panka_state" {
+  bucket = aws_s3_bucket.panka_state.id
   
   versioning_configuration {
     status = "Enabled"
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "deployer_state" {
-  bucket = aws_s3_bucket.deployer_state.id
+resource "aws_s3_bucket_server_side_encryption_configuration" "panka_state" {
+  bucket = aws_s3_bucket.panka_state.id
   
   rule {
     apply_server_side_encryption_by_default {
@@ -336,8 +336,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "deployer_state" {
   }
 }
 
-resource "aws_s3_bucket_lifecycle_configuration" "deployer_state" {
-  bucket = aws_s3_bucket.deployer_state.id
+resource "aws_s3_bucket_lifecycle_configuration" "panka_state" {
+  bucket = aws_s3_bucket.panka_state.id
   
   rule {
     id     = "delete-old-versions"
@@ -362,8 +362,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "deployer_state" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "deployer_state" {
-  bucket = aws_s3_bucket.deployer_state.id
+resource "aws_s3_bucket_public_access_block" "panka_state" {
+  bucket = aws_s3_bucket.panka_state.id
   
   block_public_acls       = true
   block_public_policy     = true
@@ -372,8 +372,8 @@ resource "aws_s3_bucket_public_access_block" "deployer_state" {
 }
 
 # DynamoDB Table for Locks
-resource "aws_dynamodb_table" "deployer_locks" {
-  name         = "${var.prefix}-deployer-locks-${var.environment}"
+resource "aws_dynamodb_table" "panka_locks" {
+  name         = "${var.prefix}-panka-locks-${var.environment}"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "lockKey"
   
@@ -392,13 +392,13 @@ resource "aws_dynamodb_table" "deployer_locks" {
   }
   
   tags = {
-    Name = "deployer-state-locks"
+    Name = "panka-state-locks"
   }
 }
 
-# IAM Role for Deployer
-resource "aws_iam_role" "deployer_execution" {
-  name = "${var.prefix}-deployer-execution-${var.environment}"
+# IAM Role for Panka
+resource "aws_iam_role" "panka_execution" {
+  name = "${var.prefix}-panka-execution-${var.environment}"
   
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -429,9 +429,9 @@ resource "aws_iam_role" "deployer_execution" {
   })
 }
 
-resource "aws_iam_role_policy" "deployer_execution" {
-  name = "deployer-execution-policy"
-  role = aws_iam_role.deployer_execution.id
+resource "aws_iam_role_policy" "panka_execution" {
+  name = "panka-execution-policy"
+  role = aws_iam_role.panka_execution.id
   
   policy = jsonencode({
     Version = "2012-10-17"
@@ -447,8 +447,8 @@ resource "aws_iam_role_policy" "deployer_execution" {
           "s3:GetObjectVersion"
         ]
         Resource = [
-          aws_s3_bucket.deployer_state.arn,
-          "${aws_s3_bucket.deployer_state.arn}/*"
+          aws_s3_bucket.panka_state.arn,
+          "${aws_s3_bucket.panka_state.arn}/*"
         ]
       },
       {
@@ -461,7 +461,7 @@ resource "aws_iam_role_policy" "deployer_execution" {
           "dynamodb:Query",
           "dynamodb:Scan"
         ]
-        Resource = aws_dynamodb_table.deployer_locks.arn
+        Resource = aws_dynamodb_table.panka_locks.arn
       },
       {
         Effect = "Allow"
@@ -492,15 +492,15 @@ resource "aws_iam_role_policy" "deployer_execution" {
 
 # Outputs
 output "state_bucket" {
-  value = aws_s3_bucket.deployer_state.id
+  value = aws_s3_bucket.panka_state.id
 }
 
 output "lock_table" {
-  value = aws_dynamodb_table.deployer_locks.id
+  value = aws_dynamodb_table.panka_locks.id
 }
 
 output "execution_role_arn" {
-  value = aws_iam_role.deployer_execution.arn
+  value = aws_iam_role.panka_execution.arn
 }
 ```
 
@@ -553,14 +553,14 @@ terraform plan \
   -var="aws_account_id=123456789012" \
   -var="environment=dev" \
   -var="github_org=company" \
-  -var="github_repo=deployer"
+  -var="github_repo=panka"
 
 # Apply
 terraform apply \
   -var="aws_account_id=123456789012" \
   -var="environment=dev" \
   -var="github_org=company" \
-  -var="github_repo=deployer"
+  -var="github_repo=panka"
 ```
 
 #### Testing Tasks
@@ -569,13 +569,13 @@ terraform apply \
 
 ```bash
 # Test S3 bucket
-aws s3 ls s3://company-deployer-state-dev/
+aws s3 ls s3://company-panka-state-dev/
 
 # Test DynamoDB table
-aws dynamodb describe-table --table-name company-deployer-locks-dev
+aws dynamodb describe-table --table-name company-panka-locks-dev
 
 # Test IAM role
-aws iam get-role --role-name company-deployer-execution-dev
+aws iam get-role --role-name company-panka-execution-dev
 ```
 
 **Acceptance Criteria:**
@@ -707,7 +707,7 @@ import (
     
     "github.com/aws/aws-sdk-go-v2/aws"
     "github.com/aws/aws-sdk-go-v2/service/s3"
-    "github.com/company/deployer/pkg/state"
+    "github.com/company/panka/pkg/state"
 )
 
 type S3StateManager struct {
@@ -847,7 +847,7 @@ import (
     "github.com/aws/aws-sdk-go-v2/service/dynamodb"
     "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
     "github.com/google/uuid"
-    "github.com/company/deployer/pkg/lock"
+    "github.com/company/panka/pkg/lock"
 )
 
 type DynamoDBLockManager struct {
@@ -949,7 +949,7 @@ func TestS3StateManager_LoadAndSave(t *testing.T) {
     // Create test state
     state := &state.State{
         Version:       "1.0.0",
-        FormatVersion: "deployer-state-v1",
+        FormatVersion: "panka-state-v1",
         Metadata: &state.StateMetadata{
             Stack:       "test-stack",
             Environment: "dev",
@@ -1130,7 +1130,7 @@ import (
     "path/filepath"
     
     "gopkg.in/yaml.v3"
-    "github.com/company/deployer/pkg/parser/schema"
+    "github.com/company/panka/pkg/parser/schema"
 )
 
 type Parser struct {
@@ -1277,7 +1277,7 @@ package validator
 import (
     "fmt"
     
-    "github.com/company/deployer/pkg/parser/schema"
+    "github.com/company/panka/pkg/parser/schema"
 )
 
 type Validator struct {
@@ -1294,7 +1294,7 @@ func (v *Validator) ValidateStack(stack *schema.Stack) error {
     v.errors = make([]error, 0)
     
     // Validate API version
-    if stack.APIVersion != "core.deployer.io/v1" {
+    if stack.APIVersion != "core.panka.io/v1" {
         v.addError(fmt.Errorf("invalid apiVersion: %s", stack.APIVersion))
     }
     
@@ -1385,7 +1385,7 @@ package parser
 
 import (
     "github.com/imdario/mergo"
-    "github.com/company/deployer/pkg/parser/schema"
+    "github.com/company/panka/pkg/parser/schema"
 )
 
 type Merger struct{}
@@ -1431,7 +1431,7 @@ func TestParser_ParseStack(t *testing.T) {
     require.NotNil(t, stack)
     
     assert.Equal(t, "test-stack", stack.Metadata.Name)
-    assert.Equal(t, "core.deployer.io/v1", stack.APIVersion)
+    assert.Equal(t, "core.panka.io/v1", stack.APIVersion)
 }
 
 // pkg/validator/validator_test.go
@@ -1512,7 +1512,7 @@ package graph
 import (
     "fmt"
     
-    "github.com/company/deployer/pkg/parser/schema"
+    "github.com/company/panka/pkg/parser/schema"
 )
 
 type Node struct {
@@ -1660,7 +1660,7 @@ import (
     "fmt"
     "strings"
     
-    "github.com/company/deployer/pkg/parser/schema"
+    "github.com/company/panka/pkg/parser/schema"
 )
 
 type DependencyExtractor struct {
@@ -1838,8 +1838,8 @@ Create `pkg/reconciler/differ.go`:
 package reconciler
 
 import (
-    "github.com/company/deployer/pkg/state"
-    "github.com/company/deployer/pkg/parser/schema"
+    "github.com/company/panka/pkg/state"
+    "github.com/company/panka/pkg/parser/schema"
 )
 
 type ChangeType string
@@ -1953,7 +1953,7 @@ import (
     "fmt"
     "time"
     
-    "github.com/company/deployer/pkg/graph"
+    "github.com/company/panka/pkg/graph"
 )
 
 type ExecutionPlan struct {
@@ -2398,7 +2398,7 @@ import (
     "github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ecs"
     "github.com/pulumi/pulumi-aws/sdk/v6/go/aws/lb"
     "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-    "github.com/company/deployer/pkg/parser/schema"
+    "github.com/company/panka/pkg/parser/schema"
 )
 
 type MicroServiceTranslator struct{}
@@ -2481,7 +2481,7 @@ package translators
 import (
     "github.com/pulumi/pulumi-aws/sdk/v6/go/aws/rds"
     "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-    "github.com/company/deployer/pkg/parser/schema"
+    "github.com/company/panka/pkg/parser/schema"
 )
 
 type RDSTranslator struct{}
@@ -2524,9 +2524,9 @@ import (
     "fmt"
     
     "github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-    "github.com/company/deployer/pkg/pulumi"
-    "github.com/company/deployer/pkg/pulumi/translators"
-    "github.com/company/deployer/pkg/reconciler"
+    "github.com/company/panka/pkg/pulumi"
+    "github.com/company/panka/pkg/pulumi/translators"
+    "github.com/company/panka/pkg/reconciler"
 )
 
 type Executor struct {
@@ -2627,7 +2627,7 @@ Each component gets:
 
 **Day 1-3: CLI Framework**
 
-Create `cmd/deployer/main.go`:
+Create `cmd/panka/main.go`:
 
 ```go
 package main
@@ -2636,7 +2636,7 @@ import (
     "os"
     
     "github.com/spf13/cobra"
-    "github.com/company/deployer/internal/cli"
+    "github.com/company/panka/internal/cli"
 )
 
 func main() {
@@ -2659,9 +2659,9 @@ import (
 
 func NewRootCommand() *cobra.Command {
     cmd := &cobra.Command{
-        Use:   "deployer",
-        Short: "Deployer manages application deployments on AWS",
-        Long:  `Deployer is a deployment management system for AWS...`,
+        Use:   "panka",
+        Short: "Panka manages application deployments on AWS",
+        Long:  `Panka is a deployment management system for AWS...`,
     }
     
     // Add subcommands
@@ -2693,7 +2693,7 @@ import (
     "fmt"
     
     "github.com/spf13/cobra"
-    "github.com/company/deployer/pkg/deployer"
+    "github.com/company/panka/pkg/panka"
 )
 
 func NewApplyCommand() *cobra.Command {
@@ -2710,9 +2710,9 @@ func NewApplyCommand() *cobra.Command {
         Use:   "apply",
         Short: "Deploy stack/service/component",
         RunE: func(cmd *cobra.Command, args []string) error {
-            d := deployer.New()
+            d := panka.New()
             
-            return d.Apply(context.Background(), &deployer.ApplyOptions{
+            return d.Apply(context.Background(), &panka.ApplyOptions{
                 Stack:       stack,
                 Service:     service,
                 Component:   component,
@@ -2865,39 +2865,39 @@ make test-integration
 1. **Deploy Simple Stack**
 ```bash
 # Test: Deploy single MicroService with RDS
-deployer apply --stack test-simple --environment dev
+panka apply --stack test-simple --environment dev
 ```
 
 2. **Deploy Complex Stack**
 ```bash
 # Test: Deploy multi-service stack with dependencies
-deployer apply --stack test-complex --environment dev
+panka apply --stack test-complex --environment dev
 ```
 
 3. **Update Deployment**
 ```bash
 # Test: Update existing deployment
-deployer apply --stack test-simple --environment dev --var VERSION=v1.1.0
+panka apply --stack test-simple --environment dev --var VERSION=v1.1.0
 ```
 
 4. **Rollback**
 ```bash
 # Test: Rollback to previous version
-deployer rollback --stack test-simple --environment dev
+panka rollback --stack test-simple --environment dev
 ```
 
 5. **Drift Detection**
 ```bash
 # Test: Detect and remediate drift
-deployer drift detect --stack test-simple --environment dev
-deployer drift remediate --stack test-simple --environment dev
+panka drift detect --stack test-simple --environment dev
+panka drift remediate --stack test-simple --environment dev
 ```
 
 6. **Concurrent Deployments**
 ```bash
 # Test: Multiple teams deploying simultaneously
-deployer apply --stack stack1 --service service-a --environment dev &
-deployer apply --stack stack1 --service service-b --environment dev &
+panka apply --stack stack1 --service service-a --environment dev &
+panka apply --stack stack1 --service service-b --environment dev &
 wait
 ```
 
@@ -2922,7 +2922,7 @@ func TestConcurrentDeployments(t *testing.T) {
             defer func() { <-semaphore }()
             
             // Deploy stack
-            err := deployer.Apply(ctx, &deployer.ApplyOptions{
+            err := panka.Apply(ctx, &panka.ApplyOptions{
                 Stack: fmt.Sprintf("perf-test-%d", stackNum),
                 Environment: "dev",
             })
@@ -2980,8 +2980,8 @@ aws dynamodb list-tables
 
 ```bash
 # Deploy platform team's services
-deployer apply --stack platform-internal --environment dev
-deployer apply --stack platform-internal --environment staging
+panka apply --stack platform-internal --environment dev
+panka apply --stack platform-internal --environment staging
 ```
 
 ### Phase 3: Pilot Rollout (Week 18, Day 3-4)
@@ -2990,9 +2990,9 @@ deployer apply --stack platform-internal --environment staging
 
 ```bash
 # Migrate notification-service
-deployer apply --stack notification-platform --environment dev
-deployer apply --stack notification-platform --environment staging
-deployer apply --stack notification-platform --environment production
+panka apply --stack notification-platform --environment dev
+panka apply --stack notification-platform --environment staging
+panka apply --stack notification-platform --environment production
 ```
 
 **Success Criteria:**
@@ -3066,7 +3066,7 @@ deployer apply --stack notification-platform --environment production
 
 ## Conclusion
 
-This implementation plan provides a comprehensive roadmap for building the deployer system from scratch to production-ready deployment. The phased approach ensures:
+This implementation plan provides a comprehensive roadmap for building the panka system from scratch to production-ready deployment. The phased approach ensures:
 
 1. **Solid Foundation**: Core infrastructure first
 2. **Iterative Development**: Each phase builds on previous

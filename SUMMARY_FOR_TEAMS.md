@@ -1,6 +1,6 @@
-# How Development Teams Start Using Deployer - Summary
+# How Development Teams Start Using Panka - Summary
 
-This document summarizes exactly how a development team would start using the deployer CLI tool.
+This document summarizes exactly how a development team would start using the panka CLI tool.
 
 ---
 
@@ -16,13 +16,13 @@ This document summarizes exactly how a development team would start using the de
 terraform apply
 
 # This creates:
-# - S3 bucket: company-deployer-state
-# - DynamoDB table: company-deployer-locks
+# - S3 bucket: company-panka-state
+# - DynamoDB table: company-panka-locks
 
 # 2. Share configuration with teams
 Email all teams:
-  "S3 Bucket: company-deployer-state"
-  "DynamoDB Table: company-deployer-locks"
+  "S3 Bucket: company-panka-state"
+  "DynamoDB Table: company-panka-locks"
   "Region: us-east-1"
 ```
 
@@ -38,19 +38,19 @@ Email all teams:
 #### Step 1: Install CLI (1 minute)
 
 ```bash
-curl -sSL https://deployer.io/install.sh | sh
-deployer version
+curl -sSL https://panka.io/install.sh | sh
+panka version
 ```
 
 #### Step 2: Configure (2 minutes)
 
 ```bash
-deployer init
+panka init
 
-? S3 Bucket: company-deployer-state
-? DynamoDB Table: company-deployer-locks
+? S3 Bucket: company-panka-state
+? DynamoDB Table: company-panka-locks
 ? Region: us-east-1
-✓ Saved to ~/.deployer/config.yaml
+✓ Saved to ~/.panka/config.yaml
 ```
 
 #### Step 3: Clone Deployment Repo (1 minute)
@@ -65,7 +65,7 @@ cd deployment-repo
 ```bash
 mkdir -p stacks/notification-platform
 cd stacks/notification-platform
-deployer stack init
+panka stack init
 ```
 
 #### Step 5: Define Service (30 minutes)
@@ -103,7 +103,7 @@ docker push ECR_REGISTRY/email-api:v1.0.0
 ```bash
 cd ~/work/deployment-repo/
 
-deployer apply \
+panka apply \
   --stack notification-platform \
   --environment development \
   --var VERSION=v1.0.0
@@ -133,7 +133,7 @@ docker build -t email-api:v1.0.1 .
 docker push ECR_REGISTRY/email-api:v1.0.1
 
 # 2. Deploy
-deployer apply \
+panka apply \
   --stack notification-platform \
   --environment development \
   --var VERSION=v1.0.1
@@ -145,7 +145,7 @@ deployer apply \
 #### Check Status
 
 ```bash
-deployer status --stack notification-platform
+panka status --stack notification-platform
 
 # Output:
 # ✓ api        MicroService    2/2 running    Healthy
@@ -156,7 +156,7 @@ deployer status --stack notification-platform
 #### View Logs
 
 ```bash
-deployer logs --component email-service/api --follow
+panka logs --component email-service/api --follow
 
 # 2024-01-15 17:05:23 INFO Starting email-api v1.0.1
 # 2024-01-15 17:05:24 INFO Connected to database
@@ -167,7 +167,7 @@ deployer logs --component email-service/api --follow
 
 ```bash
 # After testing in dev and staging
-deployer apply \
+panka apply \
   --stack notification-platform \
   --environment production \
   --var VERSION=v1.0.1
@@ -188,8 +188,8 @@ deployer apply \
 - ✅ Git
 
 ### From Platform Team (One Email)
-- ✅ S3 bucket name: `company-deployer-state`
-- ✅ DynamoDB table name: `company-deployer-locks`
+- ✅ S3 bucket name: `company-panka-state`
+- ✅ DynamoDB table name: `company-panka-locks`
 - ✅ AWS region: `us-east-1`
 
 ### What You Create
@@ -204,10 +204,10 @@ deployer apply \
 ```
 YOUR LAPTOP
     │
-    │ $ deployer apply --stack my-stack
+    │ $ panka apply --stack my-stack
     │
     ▼
-deployer CLI (runs locally)
+panka CLI (runs locally)
     │
     │ 1. Reads YAML files from disk
     │ 2. Connects to AWS
@@ -221,10 +221,10 @@ deployer CLI (runs locally)
     ▼
 AWS (Your Account)
     │
-    ├── S3: company-deployer-state/
+    ├── S3: company-panka-state/
     │   └── stacks/my-stack/dev/state.json
     │
-    ├── DynamoDB: company-deployer-locks
+    ├── DynamoDB: company-panka-locks
     │   └── Lock: "stack:my-stack:env:dev"
     │
     └── Your Resources:
@@ -233,7 +233,7 @@ AWS (Your Account)
         └── SQS Queue
 ```
 
-**Key Point**: deployer is just a CLI tool. No backend service to maintain!
+**Key Point**: panka is just a CLI tool. No backend service to maintain!
 
 ---
 
@@ -243,14 +243,14 @@ AWS (Your Account)
 
 **Alice** deploys:
 ```bash
-alice@laptop:~$ deployer apply --stack notification-platform
+alice@laptop:~$ panka apply --stack notification-platform
 Acquiring lock... ✓
 Deploying...
 ```
 
 **Bob** tries to deploy at same time:
 ```bash
-bob@laptop:~$ deployer apply --stack notification-platform
+bob@laptop:~$ panka apply --stack notification-platform
 ⚠ Stack is locked
   Locked by: alice@company.com
   Since: 2 minutes ago
@@ -271,7 +271,7 @@ Deploying...
 # .github/workflows/deploy.yml
 - name: Deploy
   run: |
-    deployer apply \
+    panka apply \
       --stack notification-platform \
       --environment production \
       --var VERSION=${{ github.sha }} \
@@ -311,23 +311,23 @@ Deploying...
 ```bash
 09:00 - Fix bug in code
 09:30 - docker build & push v1.0.2
-09:35 - deployer apply --var VERSION=v1.0.2
+09:35 - panka apply --var VERSION=v1.0.2
 09:45 - Test in dev ✓
-10:00 - deployer apply --environment staging --var VERSION=v1.0.2
+10:00 - panka apply --environment staging --var VERSION=v1.0.2
 ```
 
 **Afternoon** - Production:
 ```bash
 14:00 - Get approval
-14:05 - deployer apply --environment production --var VERSION=v1.0.2
-14:15 - Monitor with deployer logs
+14:05 - panka apply --environment production --var VERSION=v1.0.2
+14:15 - Monitor with panka logs
 14:30 - All good! ✓
 ```
 
 **If Issues**:
 ```bash
 14:20 - Error rate high! 🚨
-14:21 - deployer rollback --environment production
+14:21 - panka rollback --environment production
 14:23 - Back to v1.0.1 ✓
 ```
 
@@ -361,28 +361,28 @@ Deploying...
 
 ```bash
 # Deploy new version
-deployer apply --stack my-stack --environment dev --var VERSION=v1.0.1
+panka apply --stack my-stack --environment dev --var VERSION=v1.0.1
 
 # Check status
-deployer status --stack my-stack --environment dev
+panka status --stack my-stack --environment dev
 
 # View logs
-deployer logs --component my-service/api --follow
+panka logs --component my-service/api --follow
 
 # View deployment history
-deployer history --stack my-stack --environment production
+panka history --stack my-stack --environment production
 
 # Rollback
-deployer rollback --stack my-stack --environment production
+panka rollback --stack my-stack --environment production
 
 # Show current configuration
-deployer show --stack my-stack
+panka show --stack my-stack
 
 # Validate YAML
-deployer validate --stack my-stack
+panka validate --stack my-stack
 
 # Check for drift
-deployer drift --stack my-stack --environment production
+panka drift --stack my-stack --environment production
 ```
 
 ---
@@ -391,11 +391,11 @@ deployer drift --stack my-stack --environment production
 
 ### Documentation
 1. **[QUICKSTART.md](QUICKSTART.md)** - 5-minute overview
-2. **[HOW_TEAMS_USE_DEPLOYER.md](HOW_TEAMS_USE_DEPLOYER.md)** - Visual walkthrough
+2. **[HOW_TEAMS_USE_PANKA.md](HOW_TEAMS_USE_PANKA.md)** - Visual walkthrough
 3. **[GETTING_STARTED_GUIDE.md](docs/GETTING_STARTED_GUIDE.md)** - Detailed guide
 
 ### Support
-- **Slack**: #deployer-help
+- **Slack**: #panka-help
 - **Email**: platform-team@company.com
 - **Office Hours**: Wednesdays 3-4 PM
 
@@ -404,9 +404,9 @@ deployer drift --stack my-stack --environment production
 ## FAQs
 
 **Q: Do I need to learn Pulumi?**
-A: No. You just write YAML. Deployer handles Pulumi internally.
+A: No. You just write YAML. Panka handles Pulumi internally.
 
-**Q: Where does deployer run?**
+**Q: Where does panka run?**
 A: Anywhere with AWS access:
 - Your laptop
 - CI/CD runners
@@ -429,8 +429,8 @@ A: Use the `shared/` directory in deployment-repo for templates.
 ## Summary
 
 ### One-Time Setup (10 minutes)
-1. Install: `curl -sSL deployer.io/install.sh | sh`
-2. Configure: `deployer init`
+1. Install: `curl -sSL panka.io/install.sh | sh`
+2. Configure: `panka init`
 3. Done!
 
 ### Define Service (30 minutes)
@@ -440,7 +440,7 @@ A: Use the `shared/` directory in deployment-repo for templates.
 
 ### Daily Deployments (5 minutes)
 1. Build Docker image
-2. `deployer apply --var VERSION=v1.0.1`
+2. `panka apply --var VERSION=v1.0.1`
 3. Monitor
 
 **That's it!** No complex setup. No backend to maintain. Just YAML and a CLI tool.

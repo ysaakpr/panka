@@ -1,6 +1,6 @@
 # Getting Started Guide for Development Teams
 
-This guide walks you through onboarding to the deployer system, from initial setup to deploying your first service.
+This guide walks you through onboarding to the panka system, from initial setup to deploying your first service.
 
 ---
 
@@ -23,24 +23,24 @@ This guide walks you through onboarding to the deployer system, from initial set
 The platform team creates the shared backend infrastructure:
 
 ```bash
-# Clone deployer repository
-git clone https://github.com/company/deployer.git
-cd deployer/infrastructure/terraform
+# Clone panka repository
+git clone https://github.com/company/panka.git
+cd panka/infrastructure/terraform
 
 # Initialize Terraform
 terraform init
 
 # Create S3 bucket and DynamoDB table
 terraform apply \
-  -var="bucket_name=company-deployer-state" \
-  -var="table_name=company-deployer-locks" \
+  -var="bucket_name=company-panka-state" \
+  -var="table_name=company-panka-locks" \
   -var="region=us-east-1" \
   -var="aws_account_id=123456789012"
 
 # Output:
-# ✓ Created S3 bucket: company-deployer-state
-# ✓ Created DynamoDB table: company-deployer-locks
-# ✓ Created IAM role: DeployerExecutionRole
+# ✓ Created S3 bucket: company-panka-state
+# ✓ Created DynamoDB table: company-panka-locks
+# ✓ Created IAM role: PankaExecutionRole
 ```
 
 **What this creates:**
@@ -73,8 +73,8 @@ This repository contains deployment configurations for all services.
 
 ## Backend Configuration
 
-- S3 Bucket: `company-deployer-state`
-- DynamoDB Table: `company-deployer-locks`
+- S3 Bucket: `company-panka-state`
+- DynamoDB Table: `company-panka-locks`
 - Region: `us-east-1`
 
 ## Getting Started
@@ -97,11 +97,11 @@ Create a configuration guide for teams:
 cat > docs/BACKEND_CONFIG.md << 'EOF'
 # Backend Configuration
 
-All teams use the shared deployer backend:
+All teams use the shared panka backend:
 
 ## Configuration
 
-Add this to your `~/.deployer/config.yaml`:
+Add this to your `~/.panka/config.yaml`:
 
 ```yaml
 version: v1
@@ -109,12 +109,12 @@ version: v1
 backend:
   type: s3
   region: us-east-1
-  bucket: company-deployer-state
+  bucket: company-panka-state
   
 locks:
   type: dynamodb
   region: us-east-1
-  table: company-deployer-locks
+  table: company-panka-locks
 
 aws:
   profile: default
@@ -123,7 +123,7 @@ aws:
 
 ## AWS Permissions
 
-Request access to the `DeployerUsers` IAM group for AWS permissions.
+Request access to the `PankaUsers` IAM group for AWS permissions.
 EOF
 ```
 
@@ -134,26 +134,26 @@ Send to all development teams:
 ```
 📧 Email Template:
 
-Subject: Deployer is Ready - Deploy Your Services
+Subject: Panka is Ready - Deploy Your Services
 
 Hi Teams,
 
-We've set up the deployer system for managing AWS deployments.
+We've set up the panka system for managing AWS deployments.
 
 Backend Configuration:
-- S3 Bucket: company-deployer-state
-- DynamoDB Table: company-deployer-locks
+- S3 Bucket: company-panka-state
+- DynamoDB Table: company-panka-locks
 - Region: us-east-1
 
 Getting Started:
-1. Install CLI: curl -sSL https://deployer.io/install.sh | sh
-2. Configure backend: deployer init
+1. Install CLI: curl -sSL https://panka.io/install.sh | sh
+2. Configure backend: panka init
 3. See full guide: https://github.com/company/deployment-repo/docs/GETTING_STARTED.md
 
 Repository:
 - Deployment configs: https://github.com/company/deployment-repo
 
-Questions? #deployer-help on Slack
+Questions? #panka-help on Slack
 
 - Platform Team
 ```
@@ -168,35 +168,35 @@ Questions? #deployer-help on Slack
 
 Let's follow the **Notifications Team** as they onboard:
 
-### Step 1: Install Deployer CLI
+### Step 1: Install Panka CLI
 
 Each team member installs the CLI:
 
 ```bash
-# Install deployer
-curl -sSL https://deployer.io/install.sh | sh
+# Install panka
+curl -sSL https://panka.io/install.sh | sh
 
 # Verify installation
-deployer version
-# Output: deployer version 1.0.0
+panka version
+# Output: panka version 1.0.0
 ```
 
 **Alternative installation methods:**
 
 ```bash
 # macOS with Homebrew
-brew install deployer
+brew install panka
 
 # Download binary directly
-wget https://github.com/company/deployer/releases/download/v1.0.0/deployer-linux-amd64
-chmod +x deployer-linux-amd64
-sudo mv deployer-linux-amd64 /usr/local/bin/deployer
+wget https://github.com/company/panka/releases/download/v1.0.0/panka-linux-amd64
+chmod +x panka-linux-amd64
+sudo mv panka-linux-amd64 /usr/local/bin/panka
 
 # Build from source
-git clone https://github.com/company/deployer.git
-cd deployer
+git clone https://github.com/company/panka.git
+cd panka
 make build
-sudo mv bin/deployer /usr/local/bin/
+sudo mv bin/panka /usr/local/bin/
 ```
 
 ### Step 2: Login (Multi-Tenant Setup)
@@ -205,18 +205,18 @@ sudo mv bin/deployer /usr/local/bin/
 
 ```bash
 # Login with tenant credentials
-deployer login
+panka login
 
 # Prompts:
 ? Tenant Name: notifications-team
 ? Tenant Secret: ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG
-? S3 Bucket: company-deployer-state
+? S3 Bucket: company-panka-state
 ? Region: us-east-1
 
 Authenticating...
 ✓ Logged in as: notifications-team
 
-Session saved to ~/.deployer/session
+Session saved to ~/.panka/session
 ```
 
 **What the platform team provides:**
@@ -229,14 +229,14 @@ Session saved to ~/.deployer/session
 
 ```bash
 # Configure backend directly
-deployer init
+panka init
 
 # Prompts:
 ? AWS Region: us-east-1
-? S3 Bucket for state: company-deployer-state
-? DynamoDB Table for locks: company-deployer-locks
+? S3 Bucket for state: company-panka-state
+? DynamoDB Table for locks: company-panka-locks
 ? AWS Profile (leave blank for default): 
-✓ Configuration saved to ~/.deployer/config.yaml
+✓ Configuration saved to ~/.panka/config.yaml
 ```
 
 > **Note**: Multi-tenant mode is recommended for organizations with multiple teams. It provides better isolation, security, and cost tracking. See [MULTI_TENANCY.md](MULTI_TENANCY.md) for details.
@@ -256,20 +256,20 @@ Default region: us-east-1
 Default output format: json
 
 # Or use AWS SSO
-aws sso login --profile deployer
+aws sso login --profile panka
 
 # Or use environment variables
-export AWS_PROFILE=deployer
+export AWS_PROFILE=panka
 ```
 
 **Verify access:**
 
 ```bash
 # Test S3 access
-aws s3 ls s3://company-deployer-state/
+aws s3 ls s3://company-panka-state/
 
 # Test DynamoDB access
-aws dynamodb describe-table --table-name company-deployer-locks
+aws dynamodb describe-table --table-name company-panka-locks
 
 # Both should succeed
 ```
@@ -304,7 +304,7 @@ mkdir -p stacks/notification-platform
 cd stacks/notification-platform
 
 # Initialize stack
-deployer stack init
+panka stack init
 
 # This creates:
 # stacks/notification-platform/
@@ -323,7 +323,7 @@ deployer stack init
 **Edit `stack.yaml`:**
 
 ```yaml
-apiVersion: core.deployer.io/v1
+apiVersion: core.panka.io/v1
 kind: Stack
 
 metadata:
@@ -344,7 +344,7 @@ spec:
     name: aws
     region: us-east-1
     
-  # Backend uses ~/.deployer/config.yaml by default
+  # Backend uses ~/.panka/config.yaml by default
   # Can override per stack if needed:
   # backend:
   #   bucket: custom-bucket
@@ -361,7 +361,7 @@ mkdir -p services/email-service/components/{api,database,queue}
 
 # Create service definition
 cat > services/email-service/service.yaml << 'EOF'
-apiVersion: core.deployer.io/v1
+apiVersion: core.panka.io/v1
 kind: Service
 
 metadata:
@@ -383,7 +383,7 @@ EOF
 
 ```bash
 cat > services/email-service/components/api/microservice.yaml << 'EOF'
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: MicroService
 
 metadata:
@@ -466,7 +466,7 @@ EOF
 
 ```bash
 cat > services/email-service/components/api/infra.yaml << 'EOF'
-apiVersion: infra.deployer.io/v1
+apiVersion: infra.panka.io/v1
 kind: ComponentInfra
 
 metadata:
@@ -529,7 +529,7 @@ EOF
 
 ```bash
 cat > services/email-service/components/database/rds.yaml << 'EOF'
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: RDS
 
 metadata:
@@ -560,7 +560,7 @@ EOF
 
 ```bash
 cat > services/email-service/components/queue/sqs.yaml << 'EOF'
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: SQS
 
 metadata:
@@ -604,7 +604,7 @@ aws secretsmanager create-secret \
 cd ~/work/deployment-repo
 
 # Validate stack
-deployer validate --stack notification-platform
+panka validate --stack notification-platform
 
 # Output:
 ✓ Stack configuration is valid
@@ -665,7 +665,7 @@ First deployment to development environment:
 cd ~/work/deployment-repo
 
 # Plan deployment (dry-run)
-deployer plan \
+panka plan \
   --stack notification-platform \
   --environment development \
   --var VERSION=v1.0.0
@@ -696,7 +696,7 @@ Continue? (yes/no):
 
 ```bash
 # Apply the plan
-deployer apply \
+panka apply \
   --stack notification-platform \
   --environment development \
   --var VERSION=v1.0.0
@@ -728,7 +728,7 @@ deployer apply \
 
 ```bash
 # Check status
-deployer status \
+panka status \
   --stack notification-platform \
   --environment development
 
@@ -746,7 +746,7 @@ deployer status \
 └──────────────────────────────────────────────────────────┘
 
 # View logs
-deployer logs \
+panka logs \
   --component email-service/api \
   --environment development \
   --follow
@@ -796,12 +796,12 @@ docker push 123456789012.dkr.ecr.us-east-1.amazonaws.com/email-api:v1.0.1
 
 # 2. Deploy
 cd ~/work/deployment-repo/
-deployer apply \
+panka apply \
   --stack notification-platform \
   --environment development \
   --var VERSION=v1.0.1
 
-# Deployer detects only image tag changed
+# Panka detects only image tag changed
 # Rolling update with zero downtime
 ```
 
@@ -818,12 +818,12 @@ email:
   maxRetries: 5  # Changed from 3
 
 # Deploy (same version, just config change)
-deployer apply \
+panka apply \
   --stack notification-platform \
   --environment development \
   --var VERSION=v1.0.1
 
-# Deployer restarts containers with new config
+# Panka restarts containers with new config
 ```
 
 ### Scenario 3: Scale Up
@@ -844,7 +844,7 @@ scaling:
 # Commit and deploy
 git add .
 git commit -m "Scale email-service API"
-deployer apply --stack notification-platform --environment development --var VERSION=v1.0.1
+panka apply --stack notification-platform --environment development --var VERSION=v1.0.1
 ```
 
 ### Scenario 4: Add New Component
@@ -854,7 +854,7 @@ Add a caching layer:
 ```bash
 # Create cache component
 cat > stacks/notification-platform/services/email-service/components/cache/elasticache.yaml << 'EOF'
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: ElastiCacheRedis
 
 metadata:
@@ -888,7 +888,7 @@ dependsOn:
   - email-service/cache  # New
 
 # Deploy
-deployer apply --stack notification-platform --environment development --var VERSION=v1.0.1
+panka apply --stack notification-platform --environment development --var VERSION=v1.0.1
 ```
 
 ### Scenario 5: Promote to Staging
@@ -900,7 +900,7 @@ After testing in dev, promote to staging:
 mkdir -p stacks/notification-platform/environments/staging/services/email-service/components/api/
 
 cat > stacks/notification-platform/environments/staging/services/email-service/components/api/infra.yaml << 'EOF'
-apiVersion: infra.deployer.io/v1
+apiVersion: infra.panka.io/v1
 kind: ComponentInfra
 
 metadata:
@@ -922,7 +922,7 @@ spec:
 EOF
 
 # Deploy to staging
-deployer apply \
+panka apply \
   --stack notification-platform \
   --environment staging \
   --var VERSION=v1.0.1
@@ -934,7 +934,7 @@ After staging verification:
 
 ```bash
 # Production might require approval
-deployer apply \
+panka apply \
   --stack notification-platform \
   --environment production \
   --var VERSION=v1.0.1
@@ -969,13 +969,13 @@ Approve? (yes/no): yes
 ```bash
 # Alice deploys API changes
 cd ~/work/deployment-repo
-deployer apply --stack notification-platform --environment dev --var VERSION=v1.0.2
+panka apply --stack notification-platform --environment dev --var VERSION=v1.0.2
 ```
 
 **Bob** (trying to deploy at the same time):
 ```bash
 # Bob tries to deploy
-deployer apply --stack notification-platform --environment dev --var VERSION=v1.0.3
+panka apply --stack notification-platform --environment dev --var VERSION=v1.0.3
 
 # Output:
 ⚠ Stack is locked
@@ -1014,37 +1014,37 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      # Install deployer CLI
-      - name: Install Deployer
+      # Install panka CLI
+      - name: Install Panka
         run: |
-          curl -sSL https://deployer.io/install.sh | sh
-          deployer version
+          curl -sSL https://panka.io/install.sh | sh
+          panka version
       
       # Configure AWS (assuming OIDC)
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::123456789012:role/GithubActionsDeployer
+          role-to-assume: arn:aws:iam::123456789012:role/GithubActionsPanka
           aws-region: us-east-1
       
-      # Deployer uses AWS credentials from environment
+      # Panka uses AWS credentials from environment
       # Backend config can come from:
-      # 1. ~/.deployer/config.yaml (if exists in runner)
+      # 1. ~/.panka/config.yaml (if exists in runner)
       # 2. stack.yaml override
       # 3. Environment variables
       
       - name: Deploy
         run: |
-          deployer apply \
+          panka apply \
             --stack notification-platform \
             --environment development \
             --var VERSION=${{ github.sha }} \
             --auto-approve
         env:
           # Optional: Override backend config via env vars
-          DEPLOYER_BACKEND_BUCKET: company-deployer-state
-          DEPLOYER_BACKEND_REGION: us-east-1
-          DEPLOYER_LOCK_TABLE: company-deployer-locks
+          PANKA_BACKEND_BUCKET: company-panka-state
+          PANKA_BACKEND_REGION: us-east-1
+          PANKA_LOCK_TABLE: company-panka-locks
 ```
 
 ---
@@ -1055,7 +1055,7 @@ jobs:
 
 ```bash
 # Check who has the lock
-deployer locks show --stack notification-platform --environment development
+panka locks show --stack notification-platform --environment development
 
 # Output:
 Lock Status:
@@ -1067,25 +1067,25 @@ Lock Status:
   Status: ⚠ STALE (no heartbeat)
 
 # If stale, force unlock
-deployer unlock --stack notification-platform --environment development --force
+panka unlock --stack notification-platform --environment development --force
 ```
 
 ### Issue: "State not found"
 
 ```bash
 # First deployment for this stack/environment
-# This is normal - deployer will create initial state
+# This is normal - panka will create initial state
 
 # If state should exist but doesn't:
 # Check S3 bucket
-aws s3 ls s3://company-deployer-state/stacks/notification-platform/development/
+aws s3 ls s3://company-panka-state/stacks/notification-platform/development/
 ```
 
 ### Issue: "Component validation failed"
 
 ```bash
 # Run validation to see detailed errors
-deployer validate --stack notification-platform
+panka validate --stack notification-platform
 
 # Fix errors in YAML files
 # Common issues:
@@ -1104,7 +1104,7 @@ deployer validate --stack notification-platform
 # Feature branch for changes
 git checkout -b feature/add-cache
 # Make changes
-deployer apply --stack notification-platform --environment dev
+panka apply --stack notification-platform --environment dev
 # Test
 git commit -am "Add cache to email service"
 git push origin feature/add-cache
@@ -1136,20 +1136,20 @@ Application code and deployment configs should be versioned together:
 git tag v1.0.1
 
 # In deployment repo
-deployer apply --var VERSION=v1.0.1
+panka apply --var VERSION=v1.0.1
 ```
 
 ### 5. Monitor After Deployment
 
 ```bash
 # Watch logs
-deployer logs --component email-service/api --follow
+panka logs --component email-service/api --follow
 
 # Check metrics
-deployer metrics --component email-service/api --since 1h
+panka metrics --component email-service/api --since 1h
 
 # Verify health
-deployer status --stack notification-platform --environment production
+panka status --stack notification-platform --environment production
 ```
 
 ---
@@ -1159,7 +1159,7 @@ deployer status --stack notification-platform --environment production
 ### What You Did
 
 1. ✅ Platform team created shared backend (S3 + DynamoDB)
-2. ✅ You installed deployer CLI
+2. ✅ You installed panka CLI
 3. ✅ You configured backend
 4. ✅ You created your stack
 5. ✅ You defined your service in YAML
@@ -1168,7 +1168,7 @@ deployer status --stack notification-platform --environment production
 
 ### What You Have Now
 
-- ✅ Deployer CLI on your machine
+- ✅ Panka CLI on your machine
 - ✅ Stack configuration in Git
 - ✅ Automated deployments
 - ✅ State management (S3)
@@ -1187,12 +1187,12 @@ deployer status --stack notification-platform --environment production
 ## Getting Help
 
 - **Documentation**: All docs in deployment-repo/docs/
-- **Slack**: #deployer-help
+- **Slack**: #panka-help
 - **Platform Team**: platform-team@company.com
 - **Office Hours**: Wednesdays 3-4 PM
 
 ---
 
-**Welcome to deployer! 🚀**
+**Welcome to panka! 🚀**
 
 

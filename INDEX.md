@@ -1,6 +1,6 @@
-# Deployer - Complete Documentation Index
+# Panka - Complete Documentation Index
 
-This repository contains the complete design, implementation plan, and documentation for the Deployer system with DynamoDB-based distributed locking.
+This repository contains the complete design, implementation plan, and documentation for the Panka system with DynamoDB-based distributed locking.
 
 ---
 
@@ -25,7 +25,7 @@ This repository contains the complete design, implementation plan, and documenta
 **Architecture & Implementation:**
 
 3. **[CLI_ARCHITECTURE.md](docs/CLI_ARCHITECTURE.md)** ⭐ **Start here - CLI tool design**
-   - **Important**: Deployer is a CLI tool, not a backend service
+   - **Important**: Panka is a CLI tool, not a backend service
    - Initial setup and configuration
    - How the CLI works
    - User workflow
@@ -70,7 +70,7 @@ This repository contains the complete design, implementation plan, and documenta
    - Visual diagrams and examples
    - Benefits and FAQs
 
-3. **[HOW_TEAMS_USE_DEPLOYER.md](HOW_TEAMS_USE_DEPLOYER.md)** ⭐⭐⭐ **VISUAL WALKTHROUGH**
+3. **[HOW_TEAMS_USE_PANKA.md](HOW_TEAMS_USE_PANKA.md)** ⭐⭐⭐ **VISUAL WALKTHROUGH**
    - Complete visual walkthrough
    - Timeline from Day 0 to Month 2
    - Real terminal output examples
@@ -107,7 +107,7 @@ This repository contains the complete design, implementation plan, and documenta
 ## 📂 Complete File Structure
 
 ```
-deployer/
+panka/
 │
 ├── README.md                    # Project overview and quick start
 ├── LICENSE                      # MIT License
@@ -205,7 +205,7 @@ cat END_USER_SUMMARY.md
 
 **Step 3: Deploy**
 ```bash
-deployer apply --stack YOUR_STACK --service YOUR_SERVICE --environment dev
+panka apply --stack YOUR_STACK --service YOUR_SERVICE --environment dev
 ```
 
 ---
@@ -348,7 +348,7 @@ deployer apply --stack YOUR_STACK --service YOUR_SERVICE --environment dev
 - Examples (in docs)
 
 ### Community
-- Slack: #deployer
+- Slack: #panka
 - GitHub Discussions
 - Office Hours (weekly)
 

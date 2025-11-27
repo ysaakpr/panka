@@ -1,16 +1,16 @@
-# Deployer Architecture
+# Panka Architecture
 
 ## Overview
 
-Deployer is a Golang-based deployment management system for managing application deployments on AWS using ECS/Fargate/EKS with Pulumi as the backend orchestrator.
+Panka is a Golang-based deployment management system for managing application deployments on AWS using ECS/Fargate/EKS with Pulumi as the backend orchestrator.
 
 ## Initial Setup
 
 ### Step 1: Install CLI
 
 ```bash
-# Install deployer
-curl -sSL https://deployer.io/install.sh | sh
+# Install panka
+curl -sSL https://panka.io/install.sh | sh
 
 # Or download from releases
 # Or build from source
@@ -21,8 +21,8 @@ curl -sSL https://deployer.io/install.sh | sh
 User provides their own infrastructure:
 
 ```bash
-# Initialize deployer (interactive)
-deployer init
+# Initialize panka (interactive)
+panka init
 
 # Prompts for:
 # - AWS Region
@@ -30,16 +30,16 @@ deployer init
 # - DynamoDB Table name (for locks)
 # - AWS Profile (optional)
 
-# Creates: ~/.deployer/config.yaml
+# Creates: ~/.panka/config.yaml
 ```
 
 ### Step 3: Create Backend Infrastructure (One-Time)
 
 ```bash
-# Option A: Use deployer to create
-deployer backend create \
-  --bucket company-deployer-state \
-  --table company-deployer-locks
+# Option A: Use panka to create
+panka backend create \
+  --bucket company-panka-state \
+  --table company-panka-locks
 
 # Option B: Use Terraform (provided)
 cd infrastructure/terraform
@@ -76,13 +76,13 @@ A **component** is a single deployable unit - can be:
 
 ## System Architecture
 
-**Important**: Deployer is a **CLI tool** (like Terraform or Pulumi), not a backend service.
+**Important**: Panka is a **CLI tool** (like Terraform or Pulumi), not a backend service.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                   USER'S MACHINE / CI RUNNER                      │
 │                                                                   │
-│                      deployer CLI (Binary)                        │
+│                      panka CLI (Binary)                        │
 │                                                                   │
 │  ┌──────────────┐    ┌──────────────┐    ┌─────────────┐       │
 │  │  Discovery   │───▶│ Reconciler   │───▶│  Executor   │       │
@@ -113,17 +113,17 @@ A **component** is a single deployable unit - can be:
 
 **Key Points**:
 - CLI runs on user's machine or in CI/CD
-- No "deployer service" running in the cloud
+- No "panka service" running in the cloud
 - Users provide their own S3 bucket and DynamoDB table
 - CLI exits after deployment completes
 
 ## API Groups
 
-### `core.deployer.io/v1`
+### `core.panka.io/v1`
 - Stack
 - Service
 
-### `infra.deployer.io/v1`
+### `infra.panka.io/v1`
 - InfraDefaults
 - ServiceInfraDefaults
 - ComponentInfra
@@ -132,7 +132,7 @@ A **component** is a single deployable unit - can be:
 - Observability
 - Compliance
 
-### `components.deployer.io/v1`
+### `components.panka.io/v1`
 All deployable components:
 - MicroService, Worker, CronJob, Lambda, EC2Instance
 - RDS, DynamoDB, DocumentDB
@@ -145,7 +145,7 @@ All deployable components:
 
 ### State Backend: S3
 ```
-s3://company-deployer-state/
+s3://company-panka-state/
 ├── stacks/
 │   └── {stack-name}/
 │       └── {environment}/
@@ -156,7 +156,7 @@ s3://company-deployer-state/
 
 ### Lock Backend: DynamoDB
 ```
-Table: deployer-state-locks
+Table: panka-state-locks
 
 Primary Key: lockKey (String)
   Format: "stack:{stack-name}:env:{environment}"
@@ -286,7 +286,7 @@ Runs periodically (default: every 5 minutes) or on-demand:
 ## Security
 
 ### IAM Roles
-- **DeployerExecutionRole**: Used by deployer CLI to manage AWS resources
+- **PankaExecutionRole**: Used by panka CLI to manage AWS resources
 - **TaskExecutionRole**: Used by ECS tasks to pull images and access secrets
 - **TaskRole**: Used by running containers to access AWS services
 

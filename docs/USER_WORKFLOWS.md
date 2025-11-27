@@ -1,6 +1,6 @@
 # User Workflows for Application Development Teams
 
-This guide explains how application development teams use the deployer system for managing their services.
+This guide explains how application development teams use the panka system for managing their services.
 
 ---
 
@@ -34,29 +34,29 @@ As an application development team, you will:
 
 ## Initial Setup
 
-### Step 1: Install Deployer CLI
+### Step 1: Install Panka CLI
 
 ```bash
-# Install deployer
-curl -sSL https://deployer.io/install.sh | sh
+# Install panka
+curl -sSL https://panka.io/install.sh | sh
 
 # Verify installation
-deployer version
+panka version
 ```
 
 ### Step 2: Configure Backend (First Time Only)
 
 ```bash
-# Initialize deployer
-deployer init
+# Initialize panka
+panka init
 
 # Interactive prompts:
 ? AWS Region: us-east-1
-? S3 Bucket for state: company-deployer-state
-? DynamoDB Table for locks: company-deployer-locks
+? S3 Bucket for state: company-panka-state
+? DynamoDB Table for locks: company-panka-locks
 ? AWS Profile (optional): default
 
-# This creates: ~/.deployer/config.yaml
+# This creates: ~/.panka/config.yaml
 ```
 
 **Note**: Your platform team will provide the S3 bucket and DynamoDB table names.
@@ -92,19 +92,19 @@ deployment-repo/
             └── development/
 ```
 
-### Step 3: Install Deployer CLI (Optional)
+### Step 3: Install Panka CLI (Optional)
 
 For local validation and testing:
 
 ```bash
-# Install deployer CLI
-curl -sSL https://deployer.io/install.sh | sh
+# Install panka CLI
+curl -sSL https://panka.io/install.sh | sh
 
 # Verify installation
-deployer --version
+panka --version
 
 # Configure AWS credentials
-aws configure --profile deployer
+aws configure --profile panka
 ```
 
 ---
@@ -129,7 +129,7 @@ mkdir -p notification-service/components/{api,database,queue}
 Create `notification-service/service.yaml`:
 
 ```yaml
-apiVersion: core.deployer.io/v1
+apiVersion: core.panka.io/v1
 kind: Service
 
 metadata:
@@ -157,7 +157,7 @@ spec:
 Create `notification-service/components/api/microservice.yaml`:
 
 ```yaml
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: MicroService
 
 metadata:
@@ -242,7 +242,7 @@ spec:
 Create `notification-service/components/api/infra.yaml`:
 
 ```yaml
-apiVersion: infra.deployer.io/v1
+apiVersion: infra.panka.io/v1
 kind: ComponentInfra
 
 metadata:
@@ -280,7 +280,7 @@ spec:
 Create `notification-service/components/database/rds.yaml`:
 
 ```yaml
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: RDS
 
 metadata:
@@ -309,7 +309,7 @@ spec:
 Create `notification-service/components/queue/sqs.yaml`:
 
 ```yaml
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: SQS
 
 metadata:
@@ -401,7 +401,7 @@ Once PR is merged:
 Or use CLI locally:
 
 ```bash
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment development \
@@ -412,13 +412,13 @@ deployer apply \
 
 ```bash
 # Check service status
-deployer show \
+panka show \
   --stack user-platform \
   --component notification-service/api \
   --environment development
 
 # View logs
-deployer logs \
+panka logs \
   --stack user-platform \
   --component notification-service/api \
   --environment development \
@@ -429,14 +429,14 @@ deployer logs \
 
 ```bash
 # Deploy to staging
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment staging \
   --var VERSION=v1.0.0
 
 # After testing, deploy to production
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment production \
@@ -482,7 +482,7 @@ Inputs:
 **Option B: Via CLI**
 
 ```bash
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment production \
@@ -493,13 +493,13 @@ deployer apply \
 
 ```bash
 # Watch deployment progress
-deployer status \
+panka status \
   --stack user-platform \
   --environment production \
   --follow
 
 # View metrics
-deployer metrics \
+panka metrics \
   --component notification-service/api \
   --environment production
 ```
@@ -508,12 +508,12 @@ deployer metrics \
 
 ```bash
 # Check health
-deployer health \
+panka health \
   --component notification-service/api \
   --environment production
 
 # Run smoke tests
-deployer test \
+panka test \
   --service notification-service \
   --environment production
 ```
@@ -523,7 +523,7 @@ deployer test \
 If something goes wrong:
 
 ```bash
-deployer rollback \
+panka rollback \
   --stack user-platform \
   --service notification-service \
   --environment production
@@ -569,14 +569,14 @@ git push origin update-notification-config
 # Create PR and merge after review
 
 # Deploy
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment production \
   --var VERSION=v1.1.0  # Same version, just config change
 ```
 
-**Note**: Deployer will detect only config changed and will restart containers with new config.
+**Note**: Panka will detect only config changed and will restart containers with new config.
 
 ---
 
@@ -619,7 +619,7 @@ git push origin scale-notification-api
 Edit `environments/production/services/notification-service/components/api/infra.yaml`:
 
 ```yaml
-apiVersion: infra.deployer.io/v1
+apiVersion: infra.panka.io/v1
 kind: ComponentInfra
 
 metadata:
@@ -650,7 +650,7 @@ spec:
 Create `notification-service/components/cache/elasticache.yaml`:
 
 ```yaml
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: ElastiCacheRedis
 
 metadata:
@@ -713,7 +713,7 @@ git commit -m "Add Redis cache to notification service"
 git push origin add-notification-cache
 
 # Create PR, review, merge, deploy
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment production \
@@ -728,7 +728,7 @@ deployer apply \
 
 ```bash
 # Check all components in your service
-deployer status \
+panka status \
   --service notification-service \
   --environment production
 
@@ -747,14 +747,14 @@ Output:
 
 ```bash
 # View logs for your API
-deployer logs \
+panka logs \
   --component notification-service/api \
   --environment production \
   --follow \
   --since 1h
 
 # Filter logs
-deployer logs \
+panka logs \
   --component notification-service/api \
   --environment production \
   --filter "ERROR" \
@@ -765,7 +765,7 @@ deployer logs \
 
 ```bash
 # View metrics
-deployer metrics \
+panka metrics \
   --component notification-service/api \
   --environment production \
   --since 1h
@@ -787,7 +787,7 @@ Output:
 
 ```bash
 # View deployment history
-deployer history \
+panka history \
   --service notification-service \
   --environment production
 
@@ -806,7 +806,7 @@ Output:
 
 ```bash
 # Check if anyone made manual changes in AWS console
-deployer drift detect \
+panka drift detect \
   --service notification-service \
   --environment production
 
@@ -823,7 +823,7 @@ Output:
 └──────────────────────────────────────────────────────────────┘
 
 # Fix drift
-deployer drift remediate \
+panka drift remediate \
   --service notification-service \
   --environment production
 ```
@@ -840,13 +840,13 @@ Both services are in the `user-platform` stack. Teams can work independently:
 
 ```bash
 # Team A deploys user-service
-deployer apply \
+panka apply \
   --stack user-platform \
   --service user-service \
   --environment production
 
 # Team B deploys notification-service (can run concurrently)
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment production
@@ -881,7 +881,7 @@ environment:
 
 ```bash
 # Step 1: Deploy to dev
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment development \
@@ -890,7 +890,7 @@ deployer apply \
 # Step 2: Test thoroughly in dev
 
 # Step 3: Promote to staging
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment staging \
@@ -899,7 +899,7 @@ deployer apply \
 # Step 4: Test in staging
 
 # Step 5: Promote to production (requires approval)
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment production \
@@ -914,22 +914,22 @@ deployer apply \
 
 ```bash
 # Check deployment status
-deployer status --service notification-service --environment production
+panka status --service notification-service --environment production
 
 # View detailed error
-deployer show \
+panka show \
   --component notification-service/api \
   --environment production \
   --show-events
 
 # View logs around failure time
-deployer logs \
+panka logs \
   --component notification-service/api \
   --environment production \
   --since 30m
 
 # If needed, rollback
-deployer rollback \
+panka rollback \
   --service notification-service \
   --environment production
 ```
@@ -938,7 +938,7 @@ deployer rollback \
 
 ```bash
 # Check health check status
-deployer health \
+panka health \
   --component notification-service/api \
   --environment production
 
@@ -954,7 +954,7 @@ Output:
 └──────────────────────────────────────────────────────────────┘
 
 # Check if app is actually listening on the right port
-deployer exec \
+panka exec \
   --component notification-service/api \
   --environment production \
   --command "netstat -tuln"
@@ -964,19 +964,19 @@ deployer exec \
 
 ```bash
 # Check load balancer status
-deployer show \
+panka show \
   --component notification-service/api \
   --environment production \
   --show-loadbalancer
 
 # Check security groups
-deployer show \
+panka show \
   --component notification-service/api \
   --environment production \
   --show-networking
 
 # Test connectivity from within VPC
-deployer exec \
+panka exec \
   --component notification-service/api \
   --environment production \
   --command "curl http://localhost:8080/health"
@@ -986,17 +986,17 @@ deployer exec \
 
 ```bash
 # Check database status
-deployer status \
+panka status \
   --component notification-service/database \
   --environment production
 
 # Verify connection string
-deployer show \
+panka show \
   --component notification-service/database \
   --environment production
 
 # Check if API has correct endpoint
-deployer show \
+panka show \
   --component notification-service/api \
   --environment production \
   --show-environment | grep DATABASE
@@ -1006,7 +1006,7 @@ deployer show \
 
 ```bash
 # Check if lock is held
-deployer state locks \
+panka state locks \
   --stack user-platform \
   --environment production
 
@@ -1022,7 +1022,7 @@ Output:
 └──────────────────────────────────────────────────────────────┘
 
 # If lock is stale, force unlock
-deployer unlock \
+panka unlock \
   --stack user-platform \
   --environment production \
   --force
@@ -1106,25 +1106,25 @@ gh pr create
 
 ```bash
 # Deploy service
-deployer apply --stack STACK --service SERVICE --environment ENV --var VERSION=X
+panka apply --stack STACK --service SERVICE --environment ENV --var VERSION=X
 
 # Check status
-deployer status --service SERVICE --environment ENV
+panka status --service SERVICE --environment ENV
 
 # View logs
-deployer logs --component COMPONENT --environment ENV --follow
+panka logs --component COMPONENT --environment ENV --follow
 
 # Rollback
-deployer rollback --service SERVICE --environment ENV
+panka rollback --service SERVICE --environment ENV
 
 # Show history
-deployer history --service SERVICE --environment ENV
+panka history --service SERVICE --environment ENV
 
 # Detect drift
-deployer drift detect --service SERVICE --environment ENV
+panka drift detect --service SERVICE --environment ENV
 
 # Unlock stuck deployment
-deployer unlock --stack STACK --environment ENV --force
+panka unlock --stack STACK --environment ENV --force
 ```
 
 ### File Locations
@@ -1150,8 +1150,8 @@ Environment overrides:
 
 ### Getting Help
 
-- Documentation: `https://docs.company.com/deployer`
-- Slack: `#deployer-help`
+- Documentation: `https://docs.company.com/panka`
+- Slack: `#panka-help`
 - Platform Team: `platform-team@company.com`
 - On-call: `https://pagerduty.com/teams/platform`
 
@@ -1170,5 +1170,5 @@ As an application development team:
 
 You own your application code and configuration. Platform team owns infrastructure, networking, and security policies.
 
-**The deployer system handles all the complexity of AWS deployments for you!**
+**The panka system handles all the complexity of AWS deployments for you!**
 

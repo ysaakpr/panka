@@ -1,4 +1,4 @@
-# Deployer Implementation Plan
+# Panka Implementation Plan
 
 ## Phase 1: Core Infrastructure (Weeks 1-2)
 
@@ -140,20 +140,20 @@
 ## Phase 7: CLI & UX (Weeks 15-16)
 
 ### 7.1 CLI Commands
-- [ ] `deployer init` - Initialize new stack
-- [ ] `deployer validate` - Validate stack configuration
-- [ ] `deployer plan` - Show execution plan
-- [ ] `deployer apply` - Deploy stack
-- [ ] `deployer destroy` - Destroy stack
-- [ ] `deployer list` - List resources
-- [ ] `deployer show` - Show resource details
-- [ ] `deployer graph` - Visualize dependency graph
-- [ ] `deployer drift detect` - Detect drift
-- [ ] `deployer drift remediate` - Fix drift
-- [ ] `deployer rollback` - Rollback deployment
-- [ ] `deployer history` - Show deployment history
-- [ ] `deployer state` - State management commands
-- [ ] `deployer unlock` - Unlock stuck deployments
+- [ ] `panka init` - Initialize new stack
+- [ ] `panka validate` - Validate stack configuration
+- [ ] `panka plan` - Show execution plan
+- [ ] `panka apply` - Deploy stack
+- [ ] `panka destroy` - Destroy stack
+- [ ] `panka list` - List resources
+- [ ] `panka show` - Show resource details
+- [ ] `panka graph` - Visualize dependency graph
+- [ ] `panka drift detect` - Detect drift
+- [ ] `panka drift remediate` - Fix drift
+- [ ] `panka rollback` - Rollback deployment
+- [ ] `panka history` - Show deployment history
+- [ ] `panka state` - State management commands
+- [ ] `panka unlock` - Unlock stuck deployments
 
 ### 7.2 Interactive Features
 - [ ] Interactive plan approval
@@ -192,8 +192,8 @@
 #### Core Infrastructure
 ```hcl
 # S3 Bucket for state
-resource "aws_s3_bucket" "deployer_state" {
-  bucket = "company-deployer-state-prod"
+resource "aws_s3_bucket" "panka_state" {
+  bucket = "company-panka-state-prod"
   
   versioning {
     enabled = true
@@ -217,8 +217,8 @@ resource "aws_s3_bucket" "deployer_state" {
 }
 
 # DynamoDB Table for locks
-resource "aws_dynamodb_table" "deployer_locks" {
-  name         = "deployer-state-locks"
+resource "aws_dynamodb_table" "panka_locks" {
+  name         = "panka-state-locks"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "lockKey"
   
@@ -233,14 +233,14 @@ resource "aws_dynamodb_table" "deployer_locks" {
   }
   
   tags = {
-    Name        = "deployer-state-locks"
+    Name        = "panka-state-locks"
     ManagedBy   = "terraform"
   }
 }
 
-# IAM Role for Deployer
-resource "aws_iam_role" "deployer_execution" {
-  name = "DeployerExecutionRole"
+# IAM Role for Panka
+resource "aws_iam_role" "panka_execution" {
+  name = "PankaExecutionRole"
   
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -268,9 +268,9 @@ resource "aws_iam_role" "deployer_execution" {
   })
 }
 
-resource "aws_iam_role_policy" "deployer_execution" {
-  name = "deployer-execution-policy"
-  role = aws_iam_role.deployer_execution.id
+resource "aws_iam_role_policy" "panka_execution" {
+  name = "panka-execution-policy"
+  role = aws_iam_role.panka_execution.id
   
   policy = jsonencode({
     Version = "2012-10-17"
@@ -284,8 +284,8 @@ resource "aws_iam_role_policy" "deployer_execution" {
           "s3:ListBucket"
         ]
         Resource = [
-          aws_s3_bucket.deployer_state.arn,
-          "${aws_s3_bucket.deployer_state.arn}/*"
+          aws_s3_bucket.panka_state.arn,
+          "${aws_s3_bucket.panka_state.arn}/*"
         ]
       },
       {
@@ -296,7 +296,7 @@ resource "aws_iam_role_policy" "deployer_execution" {
           "dynamodb:DeleteItem",
           "dynamodb:UpdateItem"
         ]
-        Resource = aws_dynamodb_table.deployer_locks.arn
+        Resource = aws_dynamodb_table.panka_locks.arn
       },
       {
         Effect = "Allow"

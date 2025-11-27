@@ -1,6 +1,6 @@
-# Contributing to Deployer
+# Contributing to Panka
 
-Thank you for your interest in contributing to Deployer! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Panka! This document provides guidelines and instructions for contributing.
 
 ## Table of Contents
 
@@ -53,8 +53,8 @@ We pledge to make participation in our project a harassment-free experience for 
 1. **Fork and clone the repository**
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/deployer.git
-cd deployer
+git clone https://github.com/YOUR_USERNAME/panka.git
+cd panka
 ```
 
 2. **Install development tools**
@@ -257,7 +257,7 @@ func (s *Service) Process(data string) error {
 
 ```yaml
 # Good
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: MicroService
 
 metadata:
@@ -270,7 +270,7 @@ spec:
     tag: v1.0.0
 
 # Bad
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind:        MicroService
 metadata:
  name:api
@@ -541,9 +541,9 @@ We welcome contributions in these areas:
 
 ### Questions?
 
-- **Slack**: #deployer-dev
+- **Slack**: #panka-dev
 - **Email**: platform-team@company.com
-- **GitHub Discussions**: github.com/company/deployer/discussions
+- **GitHub Discussions**: github.com/company/panka/discussions
 
 ### Found a Bug?
 
@@ -573,7 +573,7 @@ Contributors are recognized in:
 - Release notes
 - Annual contributor report
 
-Thank you for contributing to Deployer! 🚀
+Thank you for contributing to Panka! 🚀
 
 
 

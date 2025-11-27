@@ -1,4 +1,4 @@
-# Deployer Project Summary
+# Panka Project Summary
 
 Complete deployment management system with DynamoDB locking - comprehensive documentation and implementation plan.
 
@@ -119,9 +119,9 @@ Complete deployment management system with DynamoDB locking - comprehensive docu
 ### 2. Three API Groups
 
 ```
-core.deployer.io/v1          - Stack, Service
-infra.deployer.io/v1         - Infrastructure configs
-components.deployer.io/v1    - All deployable components
+core.panka.io/v1          - Stack, Service
+infra.panka.io/v1         - Infrastructure configs
+components.panka.io/v1    - All deployable components
 ```
 
 **Rationale**: Simple, consistent, easy to remember
@@ -211,7 +211,7 @@ Base definition + environment-specific overrides = final configuration
 
 **S3 Structure:**
 ```
-s3://company-deployer-state/
+s3://company-panka-state/
 └── stacks/
     └── {stack-name}/
         └── {environment}/
@@ -222,7 +222,7 @@ s3://company-deployer-state/
 
 **DynamoDB Schema:**
 ```
-Table: deployer-state-locks
+Table: panka-state-locks
 Primary Key: lockKey (String)
 TTL: expiresAt (Number)
 Attributes: lockId, lockedBy, lockedAt, lastHeartbeat, metadata
@@ -255,8 +255,8 @@ Attributes: lockId, lockedBy, lockedAt, lastHeartbeat, metadata
 ## Repository Structure
 
 ```
-deployer/
-├── cmd/deployer/              # CLI entry point
+panka/
+├── cmd/panka/              # CLI entry point
 ├── pkg/
 │   ├── state/                 # State management
 │   │   └── s3/                # S3 implementation
@@ -529,7 +529,7 @@ deployer/
 - Video tutorials
 
 ### Community
-- Slack: #deployer-help
+- Slack: #panka-help
 - Office hours (weekly)
 - User forum
 
@@ -604,7 +604,7 @@ deployer/
 
 3. **Deploy**
    ```bash
-   deployer apply --stack YOUR_STACK --service YOUR_SERVICE --environment dev
+   panka apply --stack YOUR_STACK --service YOUR_SERVICE --environment dev
    ```
 
 ---
@@ -643,9 +643,9 @@ Built with ❤️ for developers by the Platform Team
 ## Contact
 
 - **Platform Team**: platform-team@company.com
-- **Slack**: #deployer
-- **GitHub**: github.com/company/deployer
-- **Documentation**: docs.company.com/deployer
+- **Slack**: #panka
+- **GitHub**: github.com/company/panka
+- **Documentation**: docs.company.com/panka
 
 ---
 

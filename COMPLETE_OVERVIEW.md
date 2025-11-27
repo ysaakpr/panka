@@ -1,12 +1,12 @@
-# Deployer - Complete Overview
+# Panka - Complete Overview
 
 Complete guide to the multi-tenant AWS deployment CLI tool.
 
 ---
 
-## What is Deployer?
+## What is Panka?
 
-Deployer is a **CLI tool** (like Terraform/Pulumi) that enables development teams to deploy and manage AWS applications using simple YAML files, with **multi-tenant** capabilities for organizational scale.
+Panka is a **CLI tool** (like Terraform/Pulumi) that enables development teams to deploy and manage AWS applications using simple YAML files, with **multi-tenant** capabilities for organizational scale.
 
 ### Key Characteristics
 
@@ -25,7 +25,7 @@ Deployer is a **CLI tool** (like Terraform/Pulumi) that enables development team
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                      DEPLOYER CLI                             │
+│                      PANKA CLI                                │
 │                                                               │
 │  Mode 1: ADMIN MODE                                          │
 │  • Platform team logs in with admin credentials              │
@@ -45,14 +45,14 @@ Deployer is a **CLI tool** (like Terraform/Pulumi) that enables development team
 ┌──────────────────────────────────────────────────────────────┐
 │                AWS: SHARED INFRASTRUCTURE                     │
 │                                                               │
-│  S3: company-deployer-state                                  │
+│  S3: company-panka-state                                  │
 │  ├── tenants.yaml              ← Registry of all tenants    │
 │  └── tenants/                                                │
 │      ├── notifications-team/   ← Tenant 1 (isolated)        │
 │      ├── payments-team/        ← Tenant 2 (isolated)        │
 │      └── analytics-team/       ← Tenant 3 (isolated)        │
 │                                                               │
-│  DynamoDB: company-deployer-locks                            │
+│  DynamoDB: company-panka-locks                            │
 │  ├── tenant:notifications-team:...  ← Tenant 1 locks        │
 │  ├── tenant:payments-team:...       ← Tenant 2 locks        │
 │  └── tenant:analytics-team:...      ← Tenant 3 locks        │
@@ -63,7 +63,7 @@ Deployer is a **CLI tool** (like Terraform/Pulumi) that enables development team
 ### Multi-Tenancy Features
 
 #### 1. Admin Mode
-- Login: `deployer admin login`
+- Login: `panka admin login`
 - Create tenants with isolated namespaces
 - Generate secure credentials (e.g., `ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG`)
 - Manage tenant lifecycle (suspend, activate, delete)
@@ -72,7 +72,7 @@ Deployer is a **CLI tool** (like Terraform/Pulumi) that enables development team
 - Track costs per tenant
 
 #### 2. Tenant Mode
-- Login: `deployer login` (with tenant credentials)
+- Login: `panka login` (with tenant credentials)
 - Deploy stacks within tenant namespace
 - Completely isolated from other tenants
 - Can view own tenant details and usage
@@ -120,24 +120,24 @@ tenant:payments-team:stack:payment-platform:env:staging
 
 ```bash
 # 1. Deploy AWS infrastructure
-cd deployer/infrastructure/terraform
+cd panka/infrastructure/terraform
 terraform apply \
-  -var="bucket_name=company-deployer-state" \
-  -var="table_name=company-deployer-locks"
+  -var="bucket_name=company-panka-state" \
+  -var="table_name=company-panka-locks"
 # Creates S3 bucket + DynamoDB table + Admin credentials
 
 # 2. Install CLI
-curl -sSL https://deployer.io/install.sh | sh
+curl -sSL https://panka.io/install.sh | sh
 
 # 3. Login as admin
-deployer admin login
-? S3 Bucket: company-deployer-state
+panka admin login
+? S3 Bucket: company-panka-state
 ? Region: us-east-1
 ? Admin Password: ••••••••••••
 ✓ Logged in as Administrator
 
 # 4. Create tenants
-deployer tenant init
+panka tenant init
 ? Tenant Name: notifications-team
 ? Monthly cost limit: 5000
 ✓ Tenant created
@@ -151,13 +151,13 @@ deployer tenant init
 
 ```bash
 # 1. Install CLI
-curl -sSL https://deployer.io/install.sh | sh
+curl -sSL https://panka.io/install.sh | sh
 
 # 2. Login with tenant credentials
-deployer login
+panka login
 ? Tenant: notifications-team
 ? Secret: ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG
-? Bucket: company-deployer-state
+? Bucket: company-panka-state
 ? Region: us-east-1
 ✓ Logged in as: notifications-team
 
@@ -169,7 +169,7 @@ cd deployment-repo
 # (Create stack.yaml, service.yaml, component YAMLs)
 
 # 5. Deploy
-deployer apply --stack notification-platform --environment dev --var VERSION=v1.0.0
+panka apply --stack notification-platform --environment dev --var VERSION=v1.0.0
 ✓ Deployment successful! (8m 35s)
 ```
 
@@ -177,22 +177,22 @@ deployer apply --stack notification-platform --environment dev --var VERSION=v1.
 
 ```bash
 # Deploy new version
-deployer apply --stack my-stack --var VERSION=v1.0.1
+panka apply --stack my-stack --var VERSION=v1.0.1
 
 # Check status
-deployer status --stack my-stack --environment production
+panka status --stack my-stack --environment production
 
 # View logs
-deployer logs --component my-service/api --follow
+panka logs --component my-service/api --follow
 
 # Rollback if issues
-deployer rollback --stack my-stack --environment production
+panka rollback --stack my-stack --environment production
 
 # View tenant details
-deployer tenant details
+panka tenant details
 
 # View usage
-deployer tenant usage
+panka tenant usage
 ```
 
 ---
@@ -202,7 +202,7 @@ deployer tenant usage
 ### Stack Definition
 
 ```yaml
-apiVersion: core.deployer.io/v1
+apiVersion: core.panka.io/v1
 kind: Stack
 
 metadata:
@@ -225,7 +225,7 @@ spec:
 ### Service Definition
 
 ```yaml
-apiVersion: core.deployer.io/v1
+apiVersion: core.panka.io/v1
 kind: Service
 
 metadata:
@@ -241,7 +241,7 @@ spec:
 
 **Application Config** (`microservice.yaml`):
 ```yaml
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: MicroService
 
 metadata:
@@ -273,7 +273,7 @@ spec:
 
 **Infrastructure Config** (`infra.yaml`):
 ```yaml
-apiVersion: infra.deployer.io/v1
+apiVersion: infra.panka.io/v1
 kind: ComponentInfra
 
 metadata:
@@ -300,7 +300,7 @@ spec:
 
 **Database** (`rds.yaml`):
 ```yaml
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: RDS
 
 metadata:
@@ -357,53 +357,53 @@ deployment-repo/
 
 ```bash
 # Authentication
-deployer admin login                    # Login as admin
-deployer admin logout                   # Logout
+panka admin login                    # Login as admin
+panka admin logout                   # Logout
 
 # Tenant Management
-deployer tenant init                    # Create new tenant
-deployer tenant list                    # List all tenants
-deployer tenant show <tenant>           # Show tenant details
-deployer tenant stats                   # Tenant statistics
+panka tenant init                    # Create new tenant
+panka tenant list                    # List all tenants
+panka tenant show <tenant>           # Show tenant details
+panka tenant stats                   # Tenant statistics
 
 # Credential Management
-deployer tenant rotate <tenant>         # Rotate credentials
+panka tenant rotate <tenant>         # Rotate credentials
 
 # Lifecycle
-deployer tenant suspend <tenant>        # Suspend tenant
-deployer tenant activate <tenant>       # Activate tenant
-deployer tenant delete <tenant>         # Delete tenant
+panka tenant suspend <tenant>        # Suspend tenant
+panka tenant activate <tenant>       # Activate tenant
+panka tenant delete <tenant>         # Delete tenant
 
 # Monitoring
-deployer admin monitor                  # Real-time activity
-deployer admin costs                    # Cost analysis
+panka admin monitor                  # Real-time activity
+panka admin costs                    # Cost analysis
 ```
 
 ### Tenant Commands
 
 ```bash
 # Authentication
-deployer login                          # Login as tenant
-deployer logout                         # Logout
+panka login                          # Login as tenant
+panka logout                         # Logout
 
 # Tenant Operations
-deployer tenant details                 # View tenant details
-deployer tenant usage                   # Usage statistics
+panka tenant details                 # View tenant details
+panka tenant usage                   # Usage statistics
 
 # Stack Operations
-deployer stack init                     # Create stack
-deployer validate --stack <name>        # Validate config
-deployer plan --stack <name> --env <env> --var VERSION=<ver>
-deployer apply --stack <name> --env <env> --var VERSION=<ver>
-deployer status --stack <name> --env <env>
-deployer logs --component <name> --follow
-deployer rollback --stack <name> --env <env>
-deployer destroy --stack <name> --env <env>
+panka stack init                     # Create stack
+panka validate --stack <name>        # Validate config
+panka plan --stack <name> --env <env> --var VERSION=<ver>
+panka apply --stack <name> --env <env> --var VERSION=<ver>
+panka status --stack <name> --env <env>
+panka logs --component <name> --follow
+panka rollback --stack <name> --env <env>
+panka destroy --stack <name> --env <env>
 
 # History and State
-deployer history --stack <name>         # Deployment history
-deployer drift --stack <name>           # Detect drift
-deployer outputs --stack <name>         # View outputs
+panka history --stack <name>         # Deployment history
+panka drift --stack <name>           # Detect drift
+panka outputs --stack <name>         # View outputs
 ```
 
 ---
@@ -450,7 +450,7 @@ deployer outputs --stack <name>         # View outputs
 
 1. **[MULTI_TENANT_QUICKSTART.md](MULTI_TENANT_QUICKSTART.md)** - Multi-tenant setup guide
 2. **[QUICKSTART.md](QUICKSTART.md)** - 5-minute overview
-3. **[HOW_TEAMS_USE_DEPLOYER.md](HOW_TEAMS_USE_DEPLOYER.md)** - Visual walkthrough
+3. **[HOW_TEAMS_USE_PANKA.md](HOW_TEAMS_USE_PANKA.md)** - Visual walkthrough
 4. **[GETTING_STARTED_GUIDE.md](docs/GETTING_STARTED_GUIDE.md)** - Complete step-by-step
 
 ### For Platform Administrators
@@ -505,7 +505,7 @@ With backups, logging, monitoring: ~$3/month
 
 ### Resource Costs (Per Tenant)
 
-Application resources (ECS, RDS, etc.) billed normally to your AWS account. Deployer just manages them.
+Application resources (ECS, RDS, etc.) billed normally to your AWS account. Panka just manages them.
 
 Example tenant:
 - ECS Fargate: $145/month
@@ -519,7 +519,7 @@ Example tenant:
 
 ### vs. Terraform
 
-| Feature | Deployer | Terraform |
+| Feature | Panka | Terraform |
 |---------|----------|-----------|
 | Backend | CLI tool | CLI tool |
 | Config | YAML | HCL |
@@ -529,7 +529,7 @@ Example tenant:
 | Application focus | Yes | Infrastructure |
 | Learning curve | Low | Medium |
 
-**Use Deployer when:**
+**Use Panka when:**
 - You want multi-tenancy out of the box
 - You prefer YAML over HCL
 - You want application-focused abstractions
@@ -541,7 +541,7 @@ Example tenant:
 
 ### vs. Pulumi
 
-| Feature | Deployer | Pulumi |
+| Feature | Panka | Pulumi |
 |---------|----------|--------|
 | Backend | CLI tool | CLI tool |
 | Config | YAML | Code (Go/Python/TS) |
@@ -550,7 +550,7 @@ Example tenant:
 | Application focus | Yes | Yes |
 | Learning curve | Low | Medium-High |
 
-**Use Deployer when:**
+**Use Panka when:**
 - You want declarative YAML
 - You want multi-tenancy built-in
 - You want simplicity over flexibility
@@ -562,14 +562,14 @@ Example tenant:
 
 ### vs. AWS CDK
 
-| Feature | Deployer | AWS CDK |
+| Feature | Panka | AWS CDK |
 |---------|----------|---------|
 | Backend | CLI tool | CLI + CloudFormation |
 | Config | YAML | Code (TypeScript/Python) |
 | Multi-tenant | Built-in | Manual |
 | Vendor | AWS-agnostic design | AWS-only |
 
-**Deployer uses Pulumi under the hood, so it gets:**
+**Panka uses Pulumi under the hood, so it gets:**
 - Fast deployments (parallel operations)
 - Rich state management
 - Extensibility
@@ -583,18 +583,18 @@ Example tenant:
 1. Read [MULTI_TENANCY.md](docs/MULTI_TENANCY.md)
 2. Read [PLATFORM_ADMIN_GUIDE.md](docs/PLATFORM_ADMIN_GUIDE.md)
 3. Deploy infrastructure: `terraform apply`
-4. Create first tenant: `deployer tenant init`
+4. Create first tenant: `panka tenant init`
 5. Share credentials with a team
-6. Monitor: `deployer admin monitor`
+6. Monitor: `panka admin monitor`
 
 ### For Development Teams
 
 1. Read [MULTI_TENANT_QUICKSTART.md](MULTI_TENANT_QUICKSTART.md)
 2. Read [GETTING_STARTED_GUIDE.md](docs/GETTING_STARTED_GUIDE.md)
-3. Install CLI: `curl -sSL deployer.io/install.sh | sh`
-4. Login: `deployer login`
+3. Install CLI: `curl -sSL panka.io/install.sh | sh`
+4. Login: `panka login`
 5. Define your stack in YAML
-6. Deploy: `deployer apply`
+6. Deploy: `panka apply`
 
 ### For Implementers
 
@@ -607,7 +607,7 @@ Example tenant:
 
 ## Summary
 
-**Deployer** is a multi-tenant CLI tool for deploying AWS applications using YAML.
+**Panka** is a multi-tenant CLI tool for deploying AWS applications using YAML.
 
 **One Platform Team** sets up:
 - S3 bucket

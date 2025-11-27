@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the state management and distributed locking implementation for the deployer system.
+This document describes the state management and distributed locking implementation for the panka system.
 
 ---
 
@@ -11,7 +11,7 @@ This document describes the state management and distributed locking implementat
 ### Bucket Structure
 
 ```
-s3://company-deployer-state/
+s3://company-panka-state/
 ├── stacks/
 │   ├── user-platform/
 │   │   ├── production/
@@ -56,7 +56,7 @@ s3://company-deployer-state/
 ```json
 {
   "version": "1.0.0",
-  "format_version": "deployer-state-v1",
+  "format_version": "panka-state-v1",
   
   "metadata": {
     "stack": "user-platform",
@@ -79,7 +79,7 @@ s3://company-deployer-state/
   "resources": {
     "user-service/database": {
       "kind": "RDS",
-      "api_version": "components.deployer.io/v1",
+      "api_version": "components.panka.io/v1",
       "status": "ready",
       
       "lifecycle": {
@@ -135,7 +135,7 @@ s3://company-deployer-state/
     
     "user-service/cache": {
       "kind": "ElastiCacheRedis",
-      "api_version": "components.deployer.io/v1",
+      "api_version": "components.panka.io/v1",
       "status": "ready",
       
       "lifecycle": {
@@ -184,7 +184,7 @@ s3://company-deployer-state/
     
     "user-service/api": {
       "kind": "MicroService",
-      "api_version": "components.deployer.io/v1",
+      "api_version": "components.panka.io/v1",
       "status": "ready",
       
       "lifecycle": {
@@ -308,25 +308,25 @@ s3://company-deployer-state/
 ### S3 Bucket Configuration
 
 ```hcl
-resource "aws_s3_bucket" "deployer_state" {
-  bucket = "company-deployer-state"
+resource "aws_s3_bucket" "panka_state" {
+  bucket = "company-panka-state"
   
   tags = {
-    Name      = "deployer-state"
+    Name      = "panka-state"
     ManagedBy = "terraform"
   }
 }
 
-resource "aws_s3_bucket_versioning" "deployer_state" {
-  bucket = aws_s3_bucket.deployer_state.id
+resource "aws_s3_bucket_versioning" "panka_state" {
+  bucket = aws_s3_bucket.panka_state.id
   
   versioning_configuration {
     status = "Enabled"
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "deployer_state" {
-  bucket = aws_s3_bucket.deployer_state.id
+resource "aws_s3_bucket_server_side_encryption_configuration" "panka_state" {
+  bucket = aws_s3_bucket.panka_state.id
   
   rule {
     apply_server_side_encryption_by_default {
@@ -335,8 +335,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "deployer_state" {
   }
 }
 
-resource "aws_s3_bucket_lifecycle_configuration" "deployer_state" {
-  bucket = aws_s3_bucket.deployer_state.id
+resource "aws_s3_bucket_lifecycle_configuration" "panka_state" {
+  bucket = aws_s3_bucket.panka_state.id
   
   rule {
     id     = "delete-old-versions"
@@ -361,8 +361,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "deployer_state" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "deployer_state" {
-  bucket = aws_s3_bucket.deployer_state.id
+resource "aws_s3_bucket_public_access_block" "panka_state" {
+  bucket = aws_s3_bucket.panka_state.id
   
   block_public_acls       = true
   block_public_policy     = true
@@ -378,8 +378,8 @@ resource "aws_s3_bucket_public_access_block" "deployer_state" {
 ### Table Schema
 
 ```hcl
-resource "aws_dynamodb_table" "deployer_locks" {
-  name         = "deployer-state-locks"
+resource "aws_dynamodb_table" "panka_locks" {
+  name         = "panka-state-locks"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "lockKey"
   
@@ -398,7 +398,7 @@ resource "aws_dynamodb_table" "deployer_locks" {
   }
   
   tags = {
-    Name      = "deployer-state-locks"
+    Name      = "panka-state-locks"
     ManagedBy = "terraform"
   }
 }
@@ -764,12 +764,12 @@ import (
     "fmt"
     "time"
     
-    "github.com/company/deployer/pkg/state"
+    "github.com/company/panka/pkg/state"
 )
 
 func deployStack(ctx context.Context, stack, environment string) error {
-    lockMgr := state.NewDynamoDBLockManager(dynamoClient, "deployer-state-locks")
-    stateMgr := state.NewS3StateManager(s3Client, "company-deployer-state")
+    lockMgr := state.NewDynamoDBLockManager(dynamoClient, "panka-state-locks")
+    stateMgr := state.NewS3StateManager(s3Client, "company-panka-state")
     
     // 1. Acquire lock
     lockKey := fmt.Sprintf("stack:%s:env:%s", stack, environment)
@@ -891,7 +891,7 @@ if err != nil {
 
 ```bash
 # Check lock status
-$ deployer state locks --stack user-platform --environment production
+$ panka state locks --stack user-platform --environment production
 
 Lock Status:
   Stack: user-platform
@@ -903,7 +903,7 @@ Lock Status:
   Status: ⚠ STALE (no heartbeat for >2 hours)
 
 # Force unlock if stale
-$ deployer unlock --stack user-platform --environment production --force
+$ panka unlock --stack user-platform --environment production --force
 
 ⚠ Warning: This will forcefully release the lock.
   Current holder: github-actions-run-12345
@@ -922,13 +922,13 @@ Are you sure? (yes/no): yes
 
 ```
 Metrics to track:
-- deployer.lock.acquisition.duration (ms)
-- deployer.lock.acquisition.success (count)
-- deployer.lock.acquisition.failure (count)
-- deployer.lock.held.duration (seconds)
-- deployer.lock.heartbeat.success (count)
-- deployer.lock.heartbeat.failure (count)
-- deployer.lock.stale.detected (count)
+- panka.lock.acquisition.duration (ms)
+- panka.lock.acquisition.success (count)
+- panka.lock.acquisition.failure (count)
+- panka.lock.held.duration (seconds)
+- panka.lock.heartbeat.success (count)
+- panka.lock.heartbeat.failure (count)
+- panka.lock.stale.detected (count)
 
 Dimensions:
 - Stack
@@ -940,11 +940,11 @@ Dimensions:
 
 ```hcl
 resource "aws_cloudwatch_metric_alarm" "stale_locks" {
-  alarm_name          = "deployer-stale-locks"
+  alarm_name          = "panka-stale-locks"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "1"
-  metric_name         = "deployer.lock.stale.detected"
-  namespace           = "Deployer"
+  metric_name         = "panka.lock.stale.detected"
+  namespace           = "Panka"
   period              = "300"
   statistic           = "Sum"
   threshold           = "0"
@@ -953,11 +953,11 @@ resource "aws_cloudwatch_metric_alarm" "stale_locks" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "lock_contention" {
-  alarm_name          = "deployer-high-lock-contention"
+  alarm_name          = "panka-high-lock-contention"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
-  metric_name         = "deployer.lock.acquisition.failure"
-  namespace           = "Deployer"
+  metric_name         = "panka.lock.acquisition.failure"
+  namespace           = "Panka"
   period              = "300"
   statistic           = "Sum"
   threshold           = "10"

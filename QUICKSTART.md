@@ -1,6 +1,6 @@
-# Deployer QuickStart
+# Panka QuickStart
 
-Get started with deployer in 3 simple phases.
+Get started with panka in 3 simple phases.
 
 ---
 
@@ -12,8 +12,8 @@ Get started with deployer in 3 simple phases.
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  Platform team creates:                                          │
-│  ✓ S3 bucket: company-deployer-state                            │
-│  ✓ DynamoDB table: company-deployer-locks                       │
+│  ✓ S3 bucket: company-panka-state                            │
+│  ✓ DynamoDB table: company-panka-locks                       │
 │  ✓ Deployment repository                                         │
 │                                                                   │
 │  Duration: 30 minutes                                            │
@@ -28,10 +28,10 @@ Get started with deployer in 3 simple phases.
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  Each developer:                                                 │
-│  1. Install CLI: curl -sSL deployer.io/install.sh | sh         │
-│  2. Configure: deployer init                                     │
+│  1. Install CLI: curl -sSL panka.io/install.sh | sh         │
+│  2. Configure: panka init                                     │
 │  3. Define service in YAML                                       │
-│  4. Deploy: deployer apply                                       │
+│  4. Deploy: panka apply                                       │
 │                                                                   │
 │  Duration: 1 hour                                                │
 │  Who: Each development team                                      │
@@ -45,10 +45,10 @@ Get started with deployer in 3 simple phases.
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  Developers:                                                     │
-│  • deployer apply --var VERSION=v1.0.1  (deploy new version)   │
-│  • deployer status                       (check health)          │
-│  • deployer logs --follow                (view logs)             │
-│  • deployer rollback                     (if issues)             │
+│  • panka apply --var VERSION=v1.0.1  (deploy new version)   │
+│  • panka status                       (check health)          │
+│  • panka logs --follow                (view logs)             │
+│  • panka rollback                     (if issues)             │
 │                                                                   │
 │  Duration: 5 minutes per deployment                              │
 │                                                                   │
@@ -63,10 +63,10 @@ Get started with deployer in 3 simple phases.
 
 ```bash
 # 1. Create AWS infrastructure
-cd deployer/infrastructure/terraform
+cd panka/infrastructure/terraform
 terraform apply \
-  -var="bucket_name=company-deployer-state" \
-  -var="table_name=company-deployer-locks"
+  -var="bucket_name=company-panka-state" \
+  -var="table_name=company-panka-locks"
 
 # 2. Create deployment repository
 mkdir deployment-repo
@@ -77,8 +77,8 @@ mkdir -p stacks shared docs
 # 3. Share config with teams
 cat > docs/BACKEND_CONFIG.md << 'EOF'
 Backend Configuration:
-- S3 Bucket: company-deployer-state
-- DynamoDB Table: company-deployer-locks
+- S3 Bucket: company-panka-state
+- DynamoDB Table: company-panka-locks
 - Region: us-east-1
 EOF
 ```
@@ -87,13 +87,13 @@ EOF
 
 ```
 AWS Resources:
-├── S3 Bucket: company-deployer-state
+├── S3 Bucket: company-panka-state
 │   └── For storing deployment state
 │
-├── DynamoDB Table: company-deployer-locks
+├── DynamoDB Table: company-panka-locks
 │   └── For distributed locking
 │
-└── IAM Role: DeployerExecutionRole
+└── IAM Role: PankaExecutionRole
     └── With required permissions
 
 Git Repository:
@@ -111,24 +111,24 @@ deployment-repo/
 
 ```bash
 # 1. Install CLI (1 minute)
-curl -sSL https://deployer.io/install.sh | sh
-deployer version
+curl -sSL https://panka.io/install.sh | sh
+panka version
 
 # 2. Login with tenant credentials (2 minutes)
 # Platform team provides: tenant name + secret
-deployer login
+panka login
 ? Tenant: notifications-team
 ? Secret: ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG
-? Bucket: company-deployer-state
+? Bucket: company-panka-state
 ? Region: us-east-1
 ✓ Logged in as: notifications-team
 
 # (Alternative: Single-tenant mode)
-# deployer init
-# ? S3 Bucket: company-deployer-state
-# ? DynamoDB Table: company-deployer-locks
+# panka init
+# ? S3 Bucket: company-panka-state
+# ? DynamoDB Table: company-panka-locks
 # ? Region: us-east-1
-# ✓ Saved to ~/.deployer/config.yaml
+# ✓ Saved to ~/.panka/config.yaml
 
 # 3. Clone deployment repo (1 minute)
 git clone git@github.com:company/deployment-repo.git
@@ -137,7 +137,7 @@ cd deployment-repo
 # 4. Create your stack (5 minutes)
 mkdir -p stacks/notification-platform
 cd stacks/notification-platform
-deployer stack init
+panka stack init
 
 # 5. Define your service (30 minutes)
 # Create YAML files for:
@@ -153,7 +153,7 @@ docker push ECR_REGISTRY/your-api:v1.0.0
 
 # 7. Deploy! (10 minutes)
 cd ~/work/deployment-repo/
-deployer apply \
+panka apply \
   --stack notification-platform \
   --environment development \
   --var VERSION=v1.0.0
@@ -187,22 +187,22 @@ stacks/notification-platform/
 
 ```bash
 # Deploy new version
-deployer apply --stack notification-platform --environment dev --var VERSION=v1.0.1
+panka apply --stack notification-platform --environment dev --var VERSION=v1.0.1
 
 # Check status
-deployer status --stack notification-platform --environment dev
+panka status --stack notification-platform --environment dev
 
 # View logs
-deployer logs --component email-service/api --follow
+panka logs --component email-service/api --follow
 
 # View metrics
-deployer metrics --component email-service/api --since 1h
+panka metrics --component email-service/api --since 1h
 
 # Rollback if issues
-deployer rollback --stack notification-platform --environment dev
+panka rollback --stack notification-platform --environment dev
 
 # Promote to production
-deployer apply --stack notification-platform --environment production --var VERSION=v1.0.1
+panka apply --stack notification-platform --environment production --var VERSION=v1.0.1
 ```
 
 ### Typical Day
@@ -211,19 +211,19 @@ deployer apply --stack notification-platform --environment production --var VERS
 Morning:
 09:00 - Fix bug in code
 09:30 - Build v1.0.2: docker build & push
-09:35 - Deploy to dev: deployer apply --var VERSION=v1.0.2
+09:35 - Deploy to dev: panka apply --var VERSION=v1.0.2
 09:45 - Test in dev
-10:00 - Deploy to staging: deployer apply --environment staging --var VERSION=v1.0.2
+10:00 - Deploy to staging: panka apply --environment staging --var VERSION=v1.0.2
 
 Afternoon:
 14:00 - Get approval for prod
-14:05 - Deploy to prod: deployer apply --environment production --var VERSION=v1.0.2
-14:15 - Monitor: deployer metrics & deployer logs
+14:05 - Deploy to prod: panka apply --environment production --var VERSION=v1.0.2
+14:15 - Monitor: panka metrics & panka logs
 14:30 - ✓ All good!
 
 If Issues:
 14:20 - Error rate high!
-14:21 - Rollback: deployer rollback --environment production
+14:21 - Rollback: panka rollback --environment production
 14:23 - ✓ Back to v1.0.1
 ```
 
@@ -235,12 +235,12 @@ If Issues:
 
 ```bash
 # Alice (team lead) sets up
-$ curl -sSL deployer.io/install.sh | sh
-$ deployer init
+$ curl -sSL panka.io/install.sh | sh
+$ panka init
 $ git clone git@github.com:company/deployment-repo.git
 $ cd deployment-repo
 $ mkdir -p stacks/notification-platform
-$ deployer stack init
+$ panka stack init
 $ # Creates YAML files for email service
 $ git add stacks/notification-platform/
 $ git commit -m "Add notification platform"
@@ -252,7 +252,7 @@ $ git push
 ```bash
 # Alice deploys to dev
 $ cd deployment-repo
-$ deployer apply --stack notification-platform --environment dev --var VERSION=v1.0.0
+$ panka apply --stack notification-platform --environment dev --var VERSION=v1.0.0
 ✓ Deployment successful! (8m 35s)
 
 # Bob tests
@@ -265,17 +265,17 @@ $ curl https://dev-email-api.company.com/health
 ```bash
 # Monday - Bob fixes bug
 $ docker push ECR/email-api:v1.0.1
-$ deployer apply --stack notification-platform --environment dev --var VERSION=v1.0.1
+$ panka apply --stack notification-platform --environment dev --var VERSION=v1.0.1
 
 # Tuesday - Alice adds feature
 $ docker push ECR/email-api:v1.1.0
-$ deployer apply --stack notification-platform --environment dev --var VERSION=v1.1.0
+$ panka apply --stack notification-platform --environment dev --var VERSION=v1.1.0
 
 # Wednesday - Deploy to staging
-$ deployer apply --stack notification-platform --environment staging --var VERSION=v1.1.0
+$ panka apply --stack notification-platform --environment staging --var VERSION=v1.1.0
 
 # Friday - Production!
-$ deployer apply --stack notification-platform --environment production --var VERSION=v1.1.0
+$ panka apply --stack notification-platform --environment production --var VERSION=v1.1.0
 ```
 
 ### Week 2: Adding Cache
@@ -290,7 +290,7 @@ $ vim stacks/notification-platform/services/email-service/components/api/microse
 # (add REDIS_HOST environment variable)
 
 $ git commit -am "Add Redis cache"
-$ deployer apply --stack notification-platform --environment dev --var VERSION=v1.1.0
+$ panka apply --stack notification-platform --environment dev --var VERSION=v1.1.0
 ✓ Cache created and API updated
 ```
 
@@ -298,7 +298,7 @@ $ deployer apply --stack notification-platform --environment dev --var VERSION=v
 
 ```bash
 # Team is productive
-$ deployer history --stack notification-platform --environment production
+$ panka history --stack notification-platform --environment production
 
 Deployments (last 30 days):
 v1.5.0  Jan 30  alice@company  Success  4m 32s
@@ -346,10 +346,10 @@ Average duration: 4m 20s
 ┌────────────────────────────────────────────────────────────┐
 │ YOUR LAPTOP / CI                                           │
 │                                                            │
-│  $ deployer apply --stack notification-platform           │
+│  $ panka apply --stack notification-platform           │
 │                                                            │
 │  ┌──────────────────────────────────────────────────┐    │
-│  │  deployer CLI                                    │    │
+│  │  panka CLI                                    │    │
 │  │  • Parses YAML files                            │    │
 │  │  • Connects to AWS                              │    │
 │  │  • Manages state & locks                        │    │
@@ -362,10 +362,10 @@ Average duration: 4m 20s
 ┌────────────────────────────────────────────────────────────┐
 │ AWS (Your Account)                                         │
 │                                                            │
-│  S3: company-deployer-state/                              │
+│  S3: company-panka-state/                              │
 │  └── stacks/notification-platform/production/state.json   │
 │                                                            │
-│  DynamoDB: company-deployer-locks                         │
+│  DynamoDB: company-panka-locks                         │
 │  └── Item: "stack:notification-platform:env:production"   │
 │                                                            │
 │  Your Resources:                                           │
@@ -427,14 +427,14 @@ ls -la
 
 ```bash
 # Install and configure
-deployer init
+panka init
 
 # Create your first stack
 cd deployment-repo
-deployer stack init
+panka stack init
 
 # Deploy!
-deployer apply --stack your-stack --environment dev
+panka apply --stack your-stack --environment dev
 ```
 
 ---
@@ -444,7 +444,7 @@ deployer apply --stack your-stack --environment dev
 - **Documentation**: [INDEX.md](INDEX.md)
 - **Complete Guide**: [GETTING_STARTED_GUIDE.md](docs/GETTING_STARTED_GUIDE.md)
 - **Architecture**: [CLI_ARCHITECTURE.md](docs/CLI_ARCHITECTURE.md)
-- **Slack**: #deployer-help
+- **Slack**: #panka-help
 - **Email**: platform-team@company.com
 
 ---

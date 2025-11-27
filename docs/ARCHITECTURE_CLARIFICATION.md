@@ -2,15 +2,15 @@
 
 ## Critical Correction ⚠️
 
-**The deployer is a CLI tool, not a backend service.**
+**The panka is a CLI tool, not a backend service.**
 
 This document clarifies the correct architecture based on user feedback.
 
 ---
 
-## What Deployer Is
+## What Panka Is
 
-✅ **Deployer is a command-line binary** (like `terraform`, `pulumi`, `kubectl`)
+✅ **Panka is a command-line binary** (like `terraform`, `pulumi`, `kubectl`)
 - Single executable file
 - Runs on user's machine or in CI/CD
 - Exits after completing its work
@@ -20,7 +20,7 @@ This document clarifies the correct architecture based on user feedback.
 - Users provide S3 bucket name
 - Users provide DynamoDB table name
 - Users create these resources once
-- Deployer uses them for state and locking
+- Panka uses them for state and locking
 
 ✅ **Git-based workflow**
 - YAML files in Git repository
@@ -30,7 +30,7 @@ This document clarifies the correct architecture based on user feedback.
 
 ---
 
-## What Deployer Is NOT
+## What Panka Is NOT
 
 ❌ **NOT a backend service**
 - No API server running
@@ -39,7 +39,7 @@ This document clarifies the correct architecture based on user feedback.
 - No service-to-service communication
 
 ❌ **NOT a SaaS platform**
-- No deployer.io cloud service
+- No panka.io cloud service
 - No managed infrastructure
 - No hosted control plane
 - No subscription required
@@ -58,11 +58,11 @@ This document clarifies the correct architecture based on user feedback.
 ┌─────────────────────────────────────────────────────────────────┐
 │                   Developer's Laptop / CI Runner                  │
 │                                                                   │
-│  $ deployer apply --stack user-platform --environment production │
+│  $ panka apply --stack user-platform --environment production │
 │                                                                   │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │                                                           │   │
-│  │                  deployer CLI Binary                      │   │
+│  │                  panka CLI Binary                      │   │
 │  │            (Runs once, then exits)                        │   │
 │  │                                                           │   │
 │  │  1. Parse YAML files from disk                           │   │
@@ -105,19 +105,19 @@ This document clarifies the correct architecture based on user feedback.
 
 ```bash
 # 1. Install CLI
-curl -sSL https://deployer.io/install.sh | sh
+curl -sSL https://panka.io/install.sh | sh
 
 # 2. Configure backend
-deployer init
+panka init
 ? AWS Region: us-east-1
-? S3 Bucket for state: company-deployer-state
-? DynamoDB Table for locks: company-deployer-locks
+? S3 Bucket for state: company-panka-state
+? DynamoDB Table for locks: company-panka-locks
 ? AWS Profile: default
 
-# Saves to ~/.deployer/config.yaml
+# Saves to ~/.panka/config.yaml
 
 # 3. Verify
-deployer version
+panka version
 ```
 
 ### One-Time Setup (Per Organization)
@@ -125,10 +125,10 @@ deployer version
 Create the backend infrastructure once:
 
 ```bash
-# Using deployer
-deployer backend create \
-  --bucket company-deployer-state \
-  --table company-deployer-locks \
+# Using panka
+panka backend create \
+  --bucket company-panka-state \
+  --table company-panka-locks \
   --region us-east-1
 
 # Or using Terraform (provided)
@@ -151,7 +151,7 @@ cd ~/work/my-service/deployment/
 vim stacks/user-platform/services/my-service/components/api/microservice.yaml
 
 # Deploy
-deployer apply --stack user-platform --environment dev
+panka apply --stack user-platform --environment dev
 
 # CLI runs, deploys, exits
 ```
@@ -166,18 +166,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Install Deployer
-        run: curl -sSL https://deployer.io/install.sh | sh
+      - name: Install Panka
+        run: curl -sSL https://panka.io/install.sh | sh
       
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::ACCOUNT:role/DeployerRole
+          role-to-assume: arn:aws:iam::ACCOUNT:role/PankaRole
       
-      # Backend config from ~/.deployer/config.yaml or repo
+      # Backend config from ~/.panka/config.yaml or repo
       - name: Deploy
         run: |
-          deployer apply \
+          panka apply \
             --stack user-platform \
             --environment production \
             --var VERSION=v1.0.0 \
@@ -188,7 +188,7 @@ jobs:
 
 ## Configuration
 
-### User Configuration: `~/.deployer/config.yaml`
+### User Configuration: `~/.panka/config.yaml`
 
 ```yaml
 version: v1
@@ -197,13 +197,13 @@ version: v1
 backend:
   type: s3
   region: us-east-1
-  bucket: company-deployer-state  # User provides this
+  bucket: company-panka-state  # User provides this
   
 # Lock configuration (user-provided)
 locks:
   type: dynamodb
   region: us-east-1
-  table: company-deployer-locks    # User provides this
+  table: company-panka-locks    # User provides this
   
 # AWS configuration
 aws:
@@ -214,7 +214,7 @@ aws:
 ### Stack Configuration: `stack.yaml`
 
 ```yaml
-apiVersion: core.deployer.io/v1
+apiVersion: core.panka.io/v1
 kind: Stack
 
 metadata:
@@ -239,8 +239,8 @@ spec:
 |--------|------------------------|--------------|
 | **Architecture** | Backend service | CLI tool |
 | **Deployment** | API calls to service | Run CLI binary |
-| **State Storage** | Deployer manages | User provides S3 bucket |
-| **Locking** | Deployer manages | User provides DynamoDB table |
+| **State Storage** | Panka manages | User provides S3 bucket |
+| **Locking** | Panka manages | User provides DynamoDB table |
 | **Process Model** | Always running | Run and exit |
 | **Installation** | Deploy service | Install binary |
 | **Configuration** | Service config | User config file |
@@ -293,10 +293,10 @@ terraform init
 terraform plan
 terraform apply
 
-# Deployer workflow
-deployer init
-deployer plan --stack user-platform
-deployer apply --stack user-platform
+# Panka workflow
+panka init
+panka plan --stack user-platform
+panka apply --stack user-platform
 ```
 
 **Similar:**
@@ -318,9 +318,9 @@ deployer apply --stack user-platform
 pulumi login s3://my-bucket
 pulumi up
 
-# Deployer workflow
-deployer init  # Configure S3 bucket
-deployer apply --stack user-platform
+# Panka workflow
+panka init  # Configure S3 bucket
+panka apply --stack user-platform
 ```
 
 **Similar:**
@@ -403,13 +403,13 @@ The following documents have been updated to reflect the CLI architecture:
 
 ## Summary
 
-**Deployer is a CLI tool (like Terraform or Pulumi), not a backend service.**
+**Panka is a CLI tool (like Terraform or Pulumi), not a backend service.**
 
 **Users:**
-1. Install the `deployer` binary
+1. Install the `panka` binary
 2. Provide S3 bucket and DynamoDB table names
 3. Define stacks in YAML files
-4. Run `deployer apply` from anywhere
+4. Run `panka apply` from anywhere
 5. CLI handles everything and exits
 
 **No backend. No service. Just a CLI tool.** ✅

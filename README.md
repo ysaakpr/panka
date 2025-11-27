@@ -1,12 +1,12 @@
-# Deployer
+# Panka
 
 A Golang-based deployment management system for managing application deployments on AWS using ECS/Fargate/EKS with Pulumi as the backend orchestrator.
 
-> **📖 New to Deployer? Read [COMPLETE_OVERVIEW.md](COMPLETE_OVERVIEW.md) for a comprehensive introduction!**
+> **📖 New to Panka? Read [COMPLETE_OVERVIEW.md](COMPLETE_OVERVIEW.md) for a comprehensive introduction!**
 
 ## Overview
 
-Deployer is a **command-line tool** (similar to Terraform or Pulumi) that enables teams to deploy and manage their applications on AWS with a simple, declarative YAML-based configuration.
+Panka is a **command-line tool** (similar to Terraform or Pulumi) that enables teams to deploy and manage their applications on AWS with a simple, declarative YAML-based configuration.
 
 **Key Points:**
 - **CLI tool** - No backend service to maintain
@@ -50,16 +50,16 @@ It handles all the complexity of infrastructure provisioning, state management, 
 **Option A: Multi-Tenant (Recommended)**
 
 ```bash
-# 1. Install deployer CLI
-curl -sSL https://deployer.io/install.sh | sh
-deployer version
+# 1. Install panka CLI
+curl -sSL https://panka.io/install.sh | sh
+panka version
 
 # 2. Login with tenant credentials (provided by platform team)
-deployer login
+panka login
 # Prompts for:
 # - Tenant Name: your-team
 # - Tenant Secret: (provided by admin)
-# - S3 Bucket: company-deployer-state
+# - S3 Bucket: company-panka-state
 # - AWS Region: us-east-1
 # ✓ Logged in as: your-team
 ```
@@ -67,22 +67,22 @@ deployer login
 **Option B: Single-Tenant**
 
 ```bash
-# 1. Install deployer CLI
-curl -sSL https://deployer.io/install.sh | sh
-deployer version
+# 1. Install panka CLI
+curl -sSL https://panka.io/install.sh | sh
+panka version
 
 # 2. Configure backend (interactive)
-deployer init
+panka init
 # Prompts for:
 # - AWS Region: us-east-1
-# - S3 Bucket: company-deployer-state
-# - DynamoDB Table: company-deployer-locks
+# - S3 Bucket: company-panka-state
+# - DynamoDB Table: company-panka-locks
 # - AWS Profile: default
 
 # 3. Create backend infrastructure (one-time per organization)
-deployer backend create \
-  --bucket company-deployer-state \
-  --table company-deployer-locks \
+panka backend create \
+  --bucket company-panka-state \
+  --table company-panka-locks \
   --region us-east-1
 ```
 
@@ -96,25 +96,25 @@ git clone git@github.com:company/deployment-repo.git
 cd deployment-repo
 
 # 2. Validate your stack configuration
-deployer validate --stack user-platform
+panka validate --stack user-platform
 
 # 3. Preview deployment
-deployer plan \
+panka plan \
   --stack user-platform \
   --environment development \
   --var VERSION=v1.0.0
 
 # 4. Deploy
-deployer apply \
+panka apply \
   --stack user-platform \
   --environment development \
   --var VERSION=v1.0.0
 
 # 5. Check status
-deployer status --stack user-platform --environment development
+panka status --stack user-platform --environment development
 ```
 
-**That's it!** The deployer CLI handles everything: parsing YAML, managing state in S3, locking via DynamoDB, and deploying via Pulumi.
+**That's it!** The panka CLI handles everything: parsing YAML, managing state in S3, locking via DynamoDB, and deploying via Pulumi.
 
 ## Core Concepts
 
@@ -197,7 +197,7 @@ deployment-repo/
 Create `stacks/user-platform/services/notification-service/service.yaml`:
 
 ```yaml
-apiVersion: core.deployer.io/v1
+apiVersion: core.panka.io/v1
 kind: Service
 
 metadata:
@@ -218,7 +218,7 @@ spec:
 Create `stacks/user-platform/services/notification-service/components/api/microservice.yaml`:
 
 ```yaml
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: MicroService
 
 metadata:
@@ -262,7 +262,7 @@ spec:
 Create `stacks/user-platform/services/notification-service/components/api/infra.yaml`:
 
 ```yaml
-apiVersion: infra.deployer.io/v1
+apiVersion: infra.panka.io/v1
 kind: ComponentInfra
 
 metadata:
@@ -290,7 +290,7 @@ spec:
 Create `stacks/user-platform/services/notification-service/components/database/rds.yaml`:
 
 ```yaml
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: RDS
 
 metadata:
@@ -320,17 +320,17 @@ spec:
 
 ```bash
 # Validate
-deployer validate --stack user-platform --service notification-service
+panka validate --stack user-platform --service notification-service
 
 # Plan (dry-run)
-deployer plan \
+panka plan \
   --stack user-platform \
   --service notification-service \
   --environment development \
   --var VERSION=v1.0.0
 
 # Deploy
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment development \
@@ -341,48 +341,48 @@ deployer apply \
 
 ```bash
 # Check status
-deployer status --service notification-service --environment development
+panka status --service notification-service --environment development
 
 # View logs
-deployer logs --component notification-service/api --environment development --follow
+panka logs --component notification-service/api --environment development --follow
 
 # View metrics
-deployer metrics --component notification-service/api --environment development
+panka metrics --component notification-service/api --environment development
 ```
 
 ## CLI Commands
 
 ```bash
 # Deployment
-deployer apply        # Deploy stack/service/component
-deployer plan         # Show execution plan (dry-run)
-deployer destroy      # Destroy stack/service/component
+panka apply        # Deploy stack/service/component
+panka plan         # Show execution plan (dry-run)
+panka destroy      # Destroy stack/service/component
 
 # Validation
-deployer validate     # Validate configuration
-deployer graph        # Visualize dependency graph
+panka validate     # Validate configuration
+panka graph        # Visualize dependency graph
 
 # Status & Information
-deployer status       # Show deployment status
-deployer list         # List all resources
-deployer show         # Show resource details
-deployer history      # Show deployment history
+panka status       # Show deployment status
+panka list         # List all resources
+panka show         # Show resource details
+panka history      # Show deployment history
 
 # Logs & Metrics
-deployer logs         # View logs
-deployer metrics      # View metrics
+panka logs         # View logs
+panka metrics      # View metrics
 
 # Drift Management
-deployer drift detect    # Detect configuration drift
-deployer drift remediate # Fix drift
+panka drift detect    # Detect configuration drift
+panka drift remediate # Fix drift
 
 # Rollback
-deployer rollback     # Rollback to previous version
+panka rollback     # Rollback to previous version
 
 # State Management
-deployer state show   # Show current state
-deployer state locks  # Show active locks
-deployer unlock       # Unlock stuck deployment
+panka state show   # Show current state
+panka state locks  # Show active locks
+panka unlock       # Unlock stuck deployment
 ```
 
 ## Architecture
@@ -391,7 +391,7 @@ deployer unlock       # Unlock stuck deployment
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      DEPLOYER CLI                            │
+│                      PANKA CLI                               │
 │                                                              │
 │  Discovery → Reconciler → Executor                          │
 │     ↓            ↓            ↓                             │
@@ -466,10 +466,10 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 
 ## Support
 
-- Documentation: https://docs.company.com/deployer
-- Slack: #deployer-help
+- Documentation: https://docs.company.com/panka
+- Slack: #panka-help
 - Email: platform-team@company.com
-- Issues: https://github.com/company/deployer/issues
+- Issues: https://github.com/company/panka/issues
 
 ## Roadmap
 
@@ -503,10 +503,10 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 
 ## 📚 Documentation
 
-### 🚀 New to Deployer? Start Here!
+### 🚀 New to Panka? Start Here!
 
-1. **[QUICKSTART.md](QUICKSTART.md)** ⭐⭐⭐ - 5-minute overview of how deployer works
-2. **[HOW_TEAMS_USE_DEPLOYER.md](HOW_TEAMS_USE_DEPLOYER.md)** ⭐⭐⭐ - Visual walkthrough with complete examples
+1. **[QUICKSTART.md](QUICKSTART.md)** ⭐⭐⭐ - 5-minute overview of how panka works
+2. **[HOW_TEAMS_USE_PANKA.md](HOW_TEAMS_USE_PANKA.md)** ⭐⭐⭐ - Visual walkthrough with complete examples
 3. **[GETTING_STARTED_GUIDE.md](docs/GETTING_STARTED_GUIDE.md)** ⭐⭐⭐ - Complete step-by-step onboarding guide
 
 ### 📖 Complete Documentation

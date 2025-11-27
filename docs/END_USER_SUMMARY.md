@@ -1,6 +1,6 @@
 # End User Workflow Summary
 
-This document provides a comprehensive overview of how application development teams interact with the deployer system on a day-to-day basis.
+This document provides a comprehensive overview of how application development teams interact with the panka system on a day-to-day basis.
 
 ---
 
@@ -20,7 +20,7 @@ You are **NOT** responsible for:
 - Cross-stack networking
 - Cost optimization at infrastructure level
 
-The **Platform Team** handles all infrastructure concerns. You just define what you need, and the deployer handles provisioning it.
+The **Platform Team** handles all infrastructure concerns. You just define what you need, and the panka handles provisioning it.
 
 ---
 
@@ -145,7 +145,7 @@ jobs:
 ```bash
 cd ~/work/deployment-repo/
 
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment development \
@@ -154,7 +154,7 @@ deployer apply \
 
 **What happens:**
 ```
-1. Deployer acquires lock ────────────┐
+1. Panka acquires lock ────────────┐
 2. Loads current state                 │ (Automatic)
 3. Computes changes needed             │
 4. Generates deployment plan           │
@@ -169,18 +169,18 @@ deployer apply \
 
 ```bash
 # Check deployment status
-deployer status \
+panka status \
   --service notification-service \
   --environment development
 
 # View logs
-deployer logs \
+panka logs \
   --component notification-service/api \
   --environment development \
   --follow
 
 # View metrics
-deployer metrics \
+panka metrics \
   --component notification-service/api \
   --environment development
 
@@ -192,14 +192,14 @@ curl https://dev-api.company.com/notifications/health
 
 ```bash
 # Deploy to staging (same version)
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment staging \
   --var VERSION=v1.2.0
 
 # Run integration tests
-deployer test \
+panka test \
   --service notification-service \
   --environment staging
 ```
@@ -208,7 +208,7 @@ deployer test \
 
 ```bash
 # Deploy to production
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment production \
@@ -240,7 +240,7 @@ deployer apply \
 
 ```bash
 # Watch deployment progress
-deployer status \
+panka status \
   --service notification-service \
   --environment production \
   --follow
@@ -268,8 +268,8 @@ deployer status \
   Resources updated: 1
   
   Next steps:
-  - Monitor metrics: deployer metrics --component notification-service/api
-  - View logs: deployer logs --component notification-service/api --follow
+  - Monitor metrics: panka metrics --component notification-service/api
+  - View logs: panka logs --component notification-service/api --follow
   - Dashboard: https://grafana.company.com/d/notification-service
 ```
 
@@ -284,12 +284,12 @@ If something goes wrong:
 # - Health checks failing
 
 # Manual rollback:
-deployer rollback \
+panka rollback \
   --service notification-service \
   --environment production
 
 # Rollback to specific version:
-deployer rollback \
+panka rollback \
   --service notification-service \
   --environment production \
   --to-version v1.1.0
@@ -335,7 +335,7 @@ gh pr create --title "Update notification retry config" \
   --body "Increase retry count from 3 to 5 and delay from 5s to 10s"
 
 # After review and merge, deploy:
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment production \
@@ -343,7 +343,7 @@ deployer apply \
 ```
 
 **What happens:**
-- Deployer detects only config changed
+- Panka detects only config changed
 - Restarts containers with new config
 - No new image is pulled
 - Faster deployment (~1-2 minutes)
@@ -400,7 +400,7 @@ git push origin scale-notification-api
 # Create PR and merge
 
 # Deploy
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment production \
@@ -440,7 +440,7 @@ mkdir -p stacks/user-platform/services/notification-service/components/cache/
 
 # Create cache definition
 cat > stacks/user-platform/services/notification-service/components/cache/elasticache.yaml << 'EOF'
-apiVersion: components.deployer.io/v1
+apiVersion: components.panka.io/v1
 kind: ElastiCacheRedis
 
 metadata:
@@ -531,7 +531,7 @@ git push origin add-redis-cache
 # Create PR, review, merge
 
 # Deploy
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment production \
@@ -563,7 +563,7 @@ deployer apply \
 
 ```bash
 # Quick status check
-deployer status \
+panka status \
   --service notification-service \
   --environment production
 
@@ -588,20 +588,20 @@ Output:
 
 ```bash
 # Stream logs
-deployer logs \
+panka logs \
   --component notification-service/api \
   --environment production \
   --follow
 
 # Filter errors
-deployer logs \
+panka logs \
   --component notification-service/api \
   --environment production \
   --filter "ERROR" \
   --since 1h
 
 # Search logs
-deployer logs \
+panka logs \
   --component notification-service/api \
   --environment production \
   --search "email sent" \
@@ -611,7 +611,7 @@ deployer logs \
 ### Check Metrics
 
 ```bash
-deployer metrics \
+panka metrics \
   --component notification-service/api \
   --environment production \
   --since 1h
@@ -649,7 +649,7 @@ Output:
 ### View Deployment History
 
 ```bash
-deployer history \
+panka history \
   --service notification-service \
   --environment production \
   --limit 10
@@ -672,7 +672,7 @@ Output:
 
 ```bash
 # Check for manual changes
-deployer drift detect \
+panka drift detect \
   --service notification-service \
   --environment production
 
@@ -706,7 +706,7 @@ Output:
 └──────────────────────────────────────────────────────────┘
 
 # Fix drift
-deployer drift remediate \
+panka drift remediate \
   --service notification-service \
   --environment production
 ```
@@ -719,25 +719,25 @@ deployer drift remediate \
 
 ```bash
 # Check what failed
-deployer status \
+panka status \
   --service notification-service \
   --environment production
 
 # Get detailed error
-deployer show \
+panka show \
   --component notification-service/api \
   --environment production \
   --show-events
 
 # View logs around failure time
-deployer logs \
+panka logs \
   --component notification-service/api \
   --environment production \
   --since 30m \
   --filter "ERROR"
 
 # Rollback if needed
-deployer rollback \
+panka rollback \
   --service notification-service \
   --environment production
 ```
@@ -746,12 +746,12 @@ deployer rollback \
 
 ```bash
 # Check health status
-deployer health \
+panka health \
   --component notification-service/api \
   --environment production
 
 # Exec into container
-deployer exec \
+panka exec \
   --component notification-service/api \
   --environment production \
   --command "/bin/sh"
@@ -766,12 +766,12 @@ $ cat /config/app.yaml
 
 ```bash
 # Check lock status
-deployer state locks \
+panka state locks \
   --stack user-platform \
   --environment production
 
 # If lock is stale, force unlock
-deployer unlock \
+panka unlock \
   --stack user-platform \
   --environment production \
   --force
@@ -787,19 +787,19 @@ Your team (`notification-service`) and another team (`user-service`) are both in
 
 ```bash
 # Team A: Deploys user-service
-deployer apply \
+panka apply \
   --stack user-platform \
   --service user-service \
   --environment production
 
 # Team B: Deploys notification-service (can run in parallel)
-deployer apply \
+panka apply \
   --stack user-platform \
   --service notification-service \
   --environment production
 ```
 
-**The deployer ensures:**
+**The panka ensures:**
 - Both teams can deploy simultaneously (service-level locking)
 - No conflicts between deployments
 - Dependency resolution across services
@@ -866,22 +866,22 @@ metadata:
 # Most Common Commands
 
 # Deploy
-deployer apply --stack STACK --service SERVICE --environment ENV --var VERSION=X
+panka apply --stack STACK --service SERVICE --environment ENV --var VERSION=X
 
 # Check status
-deployer status --service SERVICE --environment ENV
+panka status --service SERVICE --environment ENV
 
 # View logs
-deployer logs --component COMPONENT --environment ENV --follow
+panka logs --component COMPONENT --environment ENV --follow
 
 # Rollback
-deployer rollback --service SERVICE --environment ENV
+panka rollback --service SERVICE --environment ENV
 
 # Check history
-deployer history --service SERVICE --environment ENV
+panka history --service SERVICE --environment ENV
 
 # Detect drift
-deployer drift detect --service SERVICE --environment ENV
+panka drift detect --service SERVICE --environment ENV
 ```
 
 ---
@@ -889,22 +889,22 @@ deployer drift detect --service SERVICE --environment ENV
 ## Getting Help
 
 ### Self-Service
-- Documentation: https://docs.company.com/deployer
-- Runbooks: https://wiki.company.com/deployer
-- FAQs: https://wiki.company.com/deployer/faq
+- Documentation: https://docs.company.com/panka
+- Runbooks: https://wiki.company.com/panka
+- FAQs: https://wiki.company.com/panka/faq
 
 ### Community
-- Slack: #deployer-help
+- Slack: #panka-help
 - Office Hours: Wednesdays 3-4 PM (Platform Team)
 
 ### Support
 - Email: platform-team@company.com
 - On-call (emergencies): https://pagerduty.com/teams/platform
-- GitHub Issues: https://github.com/company/deployer/issues
+- GitHub Issues: https://github.com/company/panka/issues
 
 ---
 
-**Summary: As an app team, you define WHAT you want (in YAML), and the deployer handles HOW to provision it (on AWS). Simple!**
+**Summary: As an app team, you define WHAT you want (in YAML), and the panka handles HOW to provision it (on AWS). Simple!**
 
 
 

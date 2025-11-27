@@ -1,6 +1,6 @@
-# Multi-Tenant Deployer - QuickStart
+# Multi-Tenant Panka - QuickStart
 
-Complete guide to using deployer in multi-tenant mode.
+Complete guide to using panka in multi-tenant mode.
 
 ---
 
@@ -8,7 +8,7 @@ Complete guide to using deployer in multi-tenant mode.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     ONE DEPLOYER CLI                             │
+│                     ONE PANKA CLI                                │
 │                                                                  │
 │  Two Modes:                                                      │
 │  • Admin Mode - Platform team creates/manages tenants           │
@@ -18,7 +18,7 @@ Complete guide to using deployer in multi-tenant mode.
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              S3: company-deployer-state                          │
+│              S3: company-panka-state                          │
 │                                                                  │
 │  tenants.yaml    ← Registry of all tenants                      │
 │                                                                  │
@@ -38,14 +38,14 @@ Complete guide to using deployer in multi-tenant mode.
 
 ```bash
 # Deploy shared infrastructure
-cd deployer/infrastructure/terraform
+cd panka/infrastructure/terraform
 terraform apply \
-  -var="bucket_name=company-deployer-state" \
-  -var="table_name=company-deployer-locks"
+  -var="bucket_name=company-panka-state" \
+  -var="table_name=company-panka-locks"
 
 # Creates:
-# ✓ S3 bucket: company-deployer-state
-# ✓ DynamoDB table: company-deployer-locks
+# ✓ S3 bucket: company-panka-state
+# ✓ DynamoDB table: company-panka-locks
 # ✓ Admin credentials in Secrets Manager
 ```
 
@@ -53,12 +53,12 @@ terraform apply \
 
 ```bash
 # Install CLI
-curl -sSL https://deployer.io/install.sh | sh
+curl -sSL https://panka.io/install.sh | sh
 
 # Login as admin
-$ deployer admin login
+$ panka admin login
 
-? S3 Bucket: company-deployer-state
+? S3 Bucket: company-panka-state
 ? Region: us-east-1
 ? Admin Password: ••••••••••••••••••••••
 
@@ -69,7 +69,7 @@ Mode: ADMIN
 ### 3. Create Tenants
 
 ```bash
-$ deployer tenant init
+$ panka tenant init
 
 ? Tenant Name: notifications-team
 ? Display Name: Notifications Team
@@ -96,10 +96,10 @@ Share with the Notifications Team:
 ```
 Tenant: notifications-team
 Secret: ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG
-Bucket: company-deployer-state
+Bucket: company-panka-state
 Region: us-east-1
 
-Getting Started: https://docs.deployer.io/getting-started
+Getting Started: https://docs.panka.io/getting-started
 ```
 
 **Do this for each team:**
@@ -114,46 +114,46 @@ Getting Started: https://docs.deployer.io/getting-started
 ### 1. Install CLI
 
 ```bash
-curl -sSL https://deployer.io/install.sh | sh
-deployer version
+curl -sSL https://panka.io/install.sh | sh
+panka version
 ```
 
 ### 2. Login with Tenant Credentials
 
 ```bash
-$ deployer login
+$ panka login
 
 ? Tenant Name: notifications-team
 ? Tenant Secret: ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG
-? S3 Bucket: company-deployer-state
+? S3 Bucket: company-panka-state
 ? Region: us-east-1
 
 Authenticating...
 ✓ Logged in as: notifications-team
 
-Session saved to ~/.deployer/session
+Session saved to ~/.panka/session
 ```
 
-### 3. Use Deployer Normally
+### 3. Use Panka Normally
 
 ```bash
 # Everything scoped to your tenant automatically
 
 # Create stack
 cd deployment-repo
-deployer stack init
+panka stack init
 
 # Deploy
-deployer apply --stack notification-platform --environment dev --var VERSION=v1.0.0
+panka apply --stack notification-platform --environment dev --var VERSION=v1.0.0
 
 # Check status
-deployer status --stack notification-platform
+panka status --stack notification-platform
 
 # View logs
-deployer logs --component email-service/api
+panka logs --component email-service/api
 
 # All state goes to:
-# s3://company-deployer-state/tenants/notifications-team/v1/stacks/...
+# s3://company-panka-state/tenants/notifications-team/v1/stacks/...
 ```
 
 ---
@@ -164,52 +164,52 @@ deployer logs --component email-service/api
 
 ```bash
 # Admin login
-deployer admin login
+panka admin login
 
 # Create tenant
-deployer tenant init
+panka tenant init
 
 # List all tenants
-deployer tenant list
+panka tenant list
 
 # Show tenant details
-deployer tenant show notifications-team
+panka tenant show notifications-team
 
 # Rotate credentials
-deployer tenant rotate notifications-team
+panka tenant rotate notifications-team
 
 # Suspend/activate
-deployer tenant suspend notifications-team
-deployer tenant activate notifications-team
+panka tenant suspend notifications-team
+panka tenant activate notifications-team
 
 # Delete tenant
-deployer tenant delete notifications-team
+panka tenant delete notifications-team
 
 # Logout
-deployer admin logout
+panka admin logout
 ```
 
 ### Tenant Commands
 
 ```bash
 # Tenant login
-deployer login
+panka login
 
 # View your tenant details
-deployer tenant details
+panka tenant details
 
 # View usage
-deployer tenant usage
+panka tenant usage
 
-# Normal deployer commands
-deployer stack init
-deployer apply
-deployer status
-deployer logs
+# Normal panka commands
+panka stack init
+panka apply
+panka status
+panka logs
 # ... all other commands
 
 # Logout
-deployer logout
+panka logout
 ```
 
 ---
@@ -221,7 +221,7 @@ Each tenant gets its own isolated namespace:
 ```
 S3 Structure:
 
-company-deployer-state/
+company-panka-state/
 ├── tenants.yaml                                    ← Global registry
 │
 ├── tenants/notifications-team/                    ← Tenant 1
@@ -290,19 +290,19 @@ anly_9Zx6mPqL3wS8vM4jK7tY2bN1dF5aH0cG  (analytics-team)
 
 ```bash
 # Admin rotates credentials
-$ deployer tenant rotate notifications-team
+$ panka tenant rotate notifications-team
 
 ✓ Credentials Rotated
 
 New Secret: ntfy_2Kx7pMnR4wT9vL3jH8sY5bZ2cF6aS1dG
 
 # Team members see:
-$ deployer apply
+$ panka apply
 ✗ Authentication failed: Invalid credentials
   Credentials may have been rotated. Contact your admin.
 
 # Team re-authenticates:
-$ deployer login
+$ panka login
 ? Tenant: notifications-team
 ? Secret: ntfy_2Kx7pMnR4wT9vL3jH8sY5bZ2cF6aS1dG
 ✓ Logged in
@@ -315,7 +315,7 @@ $ deployer login
 ### View All Tenants
 
 ```bash
-$ deployer tenant list
+$ panka tenant list
 
 Tenants
 ────────────────────────────────────────────────────────────────
@@ -331,7 +331,7 @@ Total: 3 tenants, 10 stacks, $2,463/month
 ### View Tenant Details
 
 ```bash
-$ deployer tenant show notifications-team
+$ panka tenant show notifications-team
 
 Tenant: notifications-team
 ────────────────────────────────────────────────
@@ -353,7 +353,7 @@ Success Rate: 96%
 ### Real-Time Monitor
 
 ```bash
-$ deployer admin monitor
+$ panka admin monitor
 
 Active Deployments: 2
 ───────────────────────────────────────────────
@@ -371,7 +371,7 @@ Each tenant has:
 - **Cost Breakdown**: By service/component
 
 ```bash
-$ deployer tenant show notifications-team
+$ panka tenant show notifications-team
 
 Cost Breakdown:
   Compute (ECS): $145
@@ -405,26 +405,26 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Install Deployer
-        run: curl -sSL https://deployer.io/install.sh | sh
+      - name: Install Panka
+        run: curl -sSL https://panka.io/install.sh | sh
       
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::123456789012:role/GithubActionsDeployer
+          role-to-assume: arn:aws:iam::123456789012:role/GithubActionsPanka
           aws-region: us-east-1
       
-      - name: Login to Deployer
+      - name: Login to Panka
         run: |
-          deployer login \
+          panka login \
             --tenant notifications-team \
-            --secret ${{ secrets.DEPLOYER_TENANT_SECRET }} \
-            --bucket company-deployer-state \
+            --secret ${{ secrets.PANKA_TENANT_SECRET }} \
+            --bucket company-panka-state \
             --region us-east-1
       
       - name: Deploy
         run: |
-          deployer apply \
+          panka apply \
             --stack notification-platform \
             --environment production \
             --var VERSION=${{ github.sha }} \
@@ -433,7 +433,7 @@ jobs:
 
 **Store tenant secret in GitHub Secrets:**
 - Go to repo Settings → Secrets → Actions
-- Add `DEPLOYER_TENANT_SECRET`: `ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG`
+- Add `PANKA_TENANT_SECRET`: `ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG`
 
 ---
 
@@ -465,7 +465,7 @@ jobs:
 
 ✅ **Simple**
 - Login once with tenant credentials
-- Use deployer normally
+- Use panka normally
 - No complex configuration
 
 ✅ **Isolated**
@@ -522,7 +522,7 @@ A: No. Tenants are logical isolation within the same AWS account using S3 prefix
 A: No. Credentials are tenant-specific and validated against bcrypt hashes. State is stored in separate S3 prefixes.
 
 **Q: What if I lose tenant credentials?**
-A: Admin can rotate: `deployer tenant rotate <tenant-id>`. Generates new credentials.
+A: Admin can rotate: `panka tenant rotate <tenant-id>`. Generates new credentials.
 
 **Q: Can I have multiple admins?**
 A: Yes. Admin password is shared (stored in AWS Secrets Manager). All admins use same password.
@@ -546,15 +546,15 @@ A: Optional. For additional security, you can use IAM policies to restrict S3 ac
 ### Platform Team (One-Time)
 
 1. Deploy infrastructure: `terraform apply`
-2. Login as admin: `deployer admin login`
-3. Create tenants: `deployer tenant init`
+2. Login as admin: `panka admin login`
+3. Create tenants: `panka tenant init`
 4. Share credentials with teams
 
 ### Development Teams (One-Time)
 
-1. Install CLI: `curl -sSL deployer.io/install.sh | sh`
-2. Login: `deployer login` (with tenant credentials)
-3. Use normally: `deployer apply`, `deployer status`, etc.
+1. Install CLI: `curl -sSL panka.io/install.sh | sh`
+2. Login: `panka login` (with tenant credentials)
+3. Use normally: `panka apply`, `panka status`, etc.
 
 ### Result
 

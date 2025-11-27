@@ -1,13 +1,13 @@
 # Platform Admin Guide
 
-Complete guide for platform administrators managing deployer multi-tenant infrastructure.
+Complete guide for platform administrators managing panka multi-tenant infrastructure.
 
 ---
 
 ## Overview
 
 As a platform administrator, you will:
-1. Set up the shared deployer infrastructure (one-time)
+1. Set up the shared panka infrastructure (one-time)
 2. Create tenants for development teams
 3. Manage tenant lifecycle
 4. Monitor usage and costs
@@ -27,14 +27,14 @@ As a platform administrator, you will:
 ### Step 1: Deploy Infrastructure
 
 ```bash
-# Clone deployer repository
-git clone https://github.com/company/deployer.git
-cd deployer/infrastructure/terraform
+# Clone panka repository
+git clone https://github.com/company/panka.git
+cd panka/infrastructure/terraform
 
 # Review and customize variables
 cat > terraform.tfvars << EOF
-bucket_name = "company-deployer-state"
-table_name  = "company-deployer-locks"
+bucket_name = "company-panka-state"
+table_name  = "company-panka-locks"
 region      = "us-east-1"
 aws_account_id = "123456789012"
 
@@ -55,8 +55,8 @@ terraform plan
 terraform apply
 
 # Output will show:
-# ✓ S3 bucket created: company-deployer-state
-# ✓ DynamoDB table created: company-deployer-locks
+# ✓ S3 bucket created: company-panka-state
+# ✓ DynamoDB table created: company-panka-locks
 # ✓ Admin credentials stored in Secrets Manager
 # ✓ IAM roles created
 # ✓ CloudWatch alarms configured
@@ -66,23 +66,23 @@ terraform apply
 
 ```
 AWS Resources:
-├── S3 Bucket: company-deployer-state
+├── S3 Bucket: company-panka-state
 │   ├── Versioning: enabled
 │   ├── Encryption: AES-256
 │   ├── Lifecycle: archive old versions after 90 days
 │   └── Object: tenants.yaml (initial)
 │
-├── DynamoDB Table: company-deployer-locks
+├── DynamoDB Table: company-panka-locks
 │   ├── Billing: PAY_PER_REQUEST
 │   ├── TTL: enabled on TTL attribute
 │   └── GSI: TenantIndex (for querying by tenant)
 │
 ├── Secrets Manager:
-│   └── /deployer/admin-credentials
+│   └── /panka/admin-credentials
 │
 ├── IAM Roles:
-│   ├── DeployerAdminRole
-│   └── DeployerTenantRole (template)
+│   ├── PankaAdminRole
+│   └── PankaTenantRole (template)
 │
 └── CloudWatch:
     ├── Alarms: High cost, high error rate
@@ -93,44 +93,44 @@ AWS Resources:
 
 ```bash
 # Check S3 bucket
-aws s3 ls s3://company-deployer-state/
+aws s3 ls s3://company-panka-state/
 # Output: tenants.yaml
 
 # Check DynamoDB table
-aws dynamodb describe-table --table-name company-deployer-locks
+aws dynamodb describe-table --table-name company-panka-locks
 # Output: Table details with TenantIndex GSI
 
 # Check admin credentials
-aws secretsmanager describe-secret --secret-id /deployer/admin-credentials
+aws secretsmanager describe-secret --secret-id /panka/admin-credentials
 # Output: Secret metadata (not the value)
 ```
 
-### Step 3: Install Deployer CLI
+### Step 3: Install Panka CLI
 
 ```bash
 # Install CLI for admin use
-curl -sSL https://deployer.io/install.sh | sh
+curl -sSL https://panka.io/install.sh | sh
 
 # Verify installation
-deployer version
-# Output: deployer version 1.0.0
+panka version
+# Output: panka version 1.0.0
 
 # Move to system path
-sudo mv deployer /usr/local/bin/
+sudo mv panka /usr/local/bin/
 ```
 
 ### Step 4: First Admin Login
 
 ```bash
-$ deployer admin login
+$ panka admin login
 
 Admin Authentication
 ────────────────────────────────────────────────
 
 This is your first login. Admin credentials are stored in:
-AWS Secrets Manager: /deployer/admin-credentials
+AWS Secrets Manager: /panka/admin-credentials
 
-? S3 Bucket: company-deployer-state
+? S3 Bucket: company-panka-state
 ? AWS Region: us-east-1
 ? Admin Password: ••••••••••••••••••••••••••••••
 
@@ -144,19 +144,19 @@ Authenticating...
 ────────────────────────────────────────────────
 ✓ Logged in as Administrator
 
-Bucket: company-deployer-state
+Bucket: company-panka-state
 Region: us-east-1
 Tenants: 0
 
-Session saved to ~/.deployer/admin-session
+Session saved to ~/.panka/admin-session
 Session expires in 8 hours
 
 Admin Commands:
-  deployer tenant init      - Create new tenant
-  deployer tenant list      - List all tenants
-  deployer tenant show      - Show tenant details
-  deployer tenant stats     - Usage statistics
-  deployer admin logout     - Logout
+  panka tenant init      - Create new tenant
+  panka tenant list      - List all tenants
+  panka tenant show      - Show tenant details
+  panka tenant stats     - Usage statistics
+  panka admin logout     - Logout
 ────────────────────────────────────────────────
 ```
 
@@ -167,7 +167,7 @@ Admin Commands:
 ### Create First Tenant
 
 ```bash
-$ deployer tenant init
+$ panka tenant init
 
 Create New Tenant
 ────────────────────────────────────────────────
@@ -221,24 +221,24 @@ Tenant Secret: ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 ⚠ SAVE THIS - CANNOT BE RECOVERED
 
-S3 Path: s3://company-deployer-state/tenants/notifications-team/v1/
+S3 Path: s3://company-panka-state/tenants/notifications-team/v1/
 Lock Prefix: tenant:notifications-team:
 
 Credentials to share with team:
 ────────────────────────────────────────────────
 Tenant: notifications-team
 Secret: ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG
-Bucket: company-deployer-state
+Bucket: company-panka-state
 Region: us-east-1
 
-Getting Started: https://docs.deployer.io/getting-started
+Getting Started: https://docs.panka.io/getting-started
 ────────────────────────────────────────────────
 
 ⚠ IMPORTANT:
 1. Save the tenant secret securely (1Password, Vault, etc.)
 2. Share credentials via secure channel (NOT email/Slack)
 3. The secret cannot be retrieved later
-4. Use 'deployer tenant rotate' if credentials are lost
+4. Use 'panka tenant rotate' if credentials are lost
 ────────────────────────────────────────────────
 
 Next: Share credentials with the Notifications Team
@@ -272,7 +272,7 @@ tenants:
 ```
 
 ```bash
-$ deployer tenant init --batch tenants-to-create.yaml
+$ panka tenant init --batch tenants-to-create.yaml
 
 Batch Tenant Creation
 ────────────────────────────────────────────────
@@ -305,7 +305,7 @@ Credentials saved to: tenant-credentials.txt
 **`tenant-credentials.txt`:**
 
 ```
-Deployer Tenant Credentials
+Panka Tenant Credentials
 Generated: 2024-01-15 10:30:00
 ────────────────────────────────────────────────
 
@@ -322,8 +322,8 @@ Secret: anly_9Zx6mPqL3wS8vM4jK7tY2bN1dF5aH0cG
 Contact: analytics-team@company.com
 
 ────────────────────────────────────────────────
-Backend: company-deployer-state (us-east-1)
-Getting Started: https://docs.deployer.io/getting-started
+Backend: company-panka-state (us-east-1)
+Getting Started: https://docs.panka.io/getting-started
 ```
 
 ---
@@ -333,7 +333,7 @@ Getting Started: https://docs.deployer.io/getting-started
 ### List All Tenants
 
 ```bash
-$ deployer tenant list
+$ panka tenant list
 
 Tenants
 ────────────────────────────────────────────────────────────────────────────
@@ -358,7 +358,7 @@ Filters:
 ### Show Tenant Details
 
 ```bash
-$ deployer tenant show notifications-team
+$ panka tenant show notifications-team
 
 Tenant: notifications-team
 ────────────────────────────────────────────────────────────────
@@ -374,7 +374,7 @@ Contact:
   Owner: Alice Smith (alice@company.com)
 
 Storage:
-  Bucket: company-deployer-state
+  Bucket: company-panka-state
   Prefix: tenants/notifications-team/v1/
   Version: v1
   Size: 1.2 GB
@@ -436,7 +436,7 @@ Recent Activity:
 ### View Tenant Statistics
 
 ```bash
-$ deployer tenant stats
+$ panka tenant stats
 
 Tenant Statistics
 ────────────────────────────────────────────────────────────────
@@ -503,7 +503,7 @@ Export options:
 ### Rotate Tenant Credentials
 
 ```bash
-$ deployer tenant rotate notifications-team
+$ panka tenant rotate notifications-team
 
 Rotate Tenant Credentials
 ────────────────────────────────────────────────
@@ -551,7 +551,7 @@ Reason: Scheduled rotation
 Next Steps:
 1. Save new secret securely
 2. Share with team via secure channel
-3. Team re-authenticates: deployer login
+3. Team re-authenticates: panka login
    
 Email sent to: notifications-team@company.com
 ────────────────────────────────────────────────
@@ -561,7 +561,7 @@ Email sent to: notifications-team@company.com
 
 Set up automatic credential rotation:
 
-**`.deployer/admin-config.yaml`:**
+**`.panka/admin-config.yaml`:**
 
 ```yaml
 admin:
@@ -581,7 +581,7 @@ tenants:
 ```
 
 ```bash
-$ deployer admin config set-rotation-policy
+$ panka admin config set-rotation-policy
 
 Credential Rotation Policy
 ────────────────────────────────────────────────
@@ -609,7 +609,7 @@ Tenants pending rotation (within 14 days):
 ### Suspend Tenant
 
 ```bash
-$ deployer tenant suspend notifications-team
+$ panka tenant suspend notifications-team
 
 Suspend Tenant
 ────────────────────────────────────────────────
@@ -643,14 +643,14 @@ New login attempts will receive:
   "Tenant notifications-team is suspended. Contact admin."
 
 To reactivate:
-  deployer tenant activate notifications-team
+  panka tenant activate notifications-team
 ────────────────────────────────────────────────
 ```
 
 ### Activate Tenant
 
 ```bash
-$ deployer tenant activate notifications-team
+$ panka tenant activate notifications-team
 
 Activate Tenant
 ────────────────────────────────────────────────
@@ -675,7 +675,7 @@ Team can now log in and deploy normally.
 ### Delete Tenant
 
 ```bash
-$ deployer tenant delete notifications-team
+$ panka tenant delete notifications-team
 
 Delete Tenant
 ────────────────────────────────────────────────
@@ -693,7 +693,7 @@ State Size: 1.2 GB
   - Optionally deletes state after grace period
 
 Backup Location:
-  s3://company-deployer-state/archive/notifications-team-2024-01-15/
+  s3://company-panka-state/archive/notifications-team-2024-01-15/
 
 Grace Period: 30 days (configurable)
 
@@ -712,12 +712,12 @@ Deleting tenant...
 ✓ Tenant Deleted
 
 Backup Location:
-  s3://company-deployer-state/archive/notifications-team-2024-01-15/
+  s3://company-panka-state/archive/notifications-team-2024-01-15/
 
 State will be permanently deleted after: 2024-02-14
 
 To cancel deletion:
-  deployer tenant restore notifications-team
+  panka tenant restore notifications-team
 ────────────────────────────────────────────────
 ```
 
@@ -728,7 +728,7 @@ To cancel deletion:
 ### View Real-Time Activity
 
 ```bash
-$ deployer admin monitor
+$ panka admin monitor
 
 Real-Time Activity Monitor
 ────────────────────────────────────────────────
@@ -768,7 +768,7 @@ Cost (Today):
 ### Configure Alerts
 
 ```bash
-$ deployer admin alerts configure
+$ panka admin alerts configure
 
 Alert Configuration
 ────────────────────────────────────────────────
@@ -796,7 +796,7 @@ Security Alerts:
 
 Notification Channels:
   [x] Email
-  [x] Slack (#deployer-alerts)
+  [x] Slack (#panka-alerts)
   [ ] PagerDuty
   [ ] SNS
 
@@ -812,7 +812,7 @@ Notification Channels:
 1. **Admin Credentials**:
    ```bash
    # Rotate every 90 days
-   deployer admin rotate-password
+   panka admin rotate-password
    
    # Use AWS Secrets Manager
    # Never commit to Git
@@ -822,7 +822,7 @@ Notification Channels:
 2. **Tenant Credentials**:
    ```bash
    # Rotate on team member departure
-   deployer tenant rotate <tenant-id>
+   panka tenant rotate <tenant-id>
    
    # Share via secure channels (1Password, Vault)
    # Monitor for unusual activity
@@ -838,13 +838,13 @@ Notification Channels:
 1. **Regular Maintenance**:
    ```bash
    # Weekly: Review tenant usage
-   deployer tenant stats --period week
+   panka tenant stats --period week
    
    # Monthly: Review costs
-   deployer admin costs --period month
+   panka admin costs --period month
    
    # Quarterly: Credential rotation
-   deployer admin rotate-all
+   panka admin rotate-all
    ```
 
 2. **Backup**:
@@ -852,7 +852,7 @@ Notification Channels:
    # Automated: S3 versioning enabled
    # Automated: Cross-region replication
    # Manual: Export tenant configs
-   deployer admin export --all --output tenants-backup.yaml
+   panka admin export --all --output tenants-backup.yaml
    ```
 
 3. **Monitoring**:
@@ -869,27 +869,27 @@ Notification Channels:
 
 ```bash
 # Check tenant status
-deployer tenant show <tenant-id>
+panka tenant show <tenant-id>
 
 # Common issues:
 # 1. Tenant suspended
-deployer tenant activate <tenant-id>
+panka tenant activate <tenant-id>
 
 # 2. Wrong credentials
-deployer tenant rotate <tenant-id>
+panka tenant rotate <tenant-id>
 
 # 3. Session expired (team member issue, not admin)
-# Team member runs: deployer login
+# Team member runs: panka login
 ```
 
 ### High Costs
 
 ```bash
 # Identify expensive tenants
-deployer tenant list --sort cost
+panka tenant list --sort cost
 
 # Review tenant details
-deployer tenant show <expensive-tenant>
+panka tenant show <expensive-tenant>
 
 # Check for:
 # - Over-provisioned resources
@@ -899,17 +899,17 @@ deployer tenant show <expensive-tenant>
 
 # Contact tenant
 # Or adjust cost limit:
-deployer tenant update <tenant-id> --cost-limit 3000
+panka tenant update <tenant-id> --cost-limit 3000
 ```
 
 ### Lock Contention
 
 ```bash
 # View active locks
-deployer admin locks
+panka admin locks
 
 # Force release stale lock (caution!)
-deployer admin unlock tenant:<tenant-id>:stack:<stack>:env:<env> --force
+panka admin unlock tenant:<tenant-id>:stack:<stack>:env:<env> --force
 
 # Reason for stale locks:
 # - CLI crashed
@@ -930,22 +930,22 @@ As a platform admin, you:
 1. **Setup** (one-time):
    - Deploy infrastructure with Terraform
    - Configure admin credentials
-   - Login with `deployer admin login`
+   - Login with `panka admin login`
 
 2. **Create Tenants**:
-   - `deployer tenant init`
+   - `panka tenant init`
    - Share credentials securely
    - Monitor usage
 
 3. **Manage Lifecycle**:
-   - List: `deployer tenant list`
-   - Details: `deployer tenant show <tenant>`
-   - Rotate: `deployer tenant rotate <tenant>`
+   - List: `panka tenant list`
+   - Details: `panka tenant show <tenant>`
+   - Rotate: `panka tenant rotate <tenant>`
    - Suspend/Activate/Delete
 
 4. **Monitor**:
-   - Real-time: `deployer admin monitor`
-   - Stats: `deployer tenant stats`
+   - Real-time: `panka admin monitor`
+   - Stats: `panka tenant stats`
    - Alerts: Configure in CloudWatch
 
 **Next Steps**:
