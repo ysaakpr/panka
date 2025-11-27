@@ -7,31 +7,48 @@ This repository contains the complete design, implementation plan, and documenta
 ## 📋 Quick Navigation
 
 ### For Platform Engineers / Implementers
-1. **[CLI_ARCHITECTURE.md](docs/CLI_ARCHITECTURE.md)** ⭐ **Start here - CLI tool design**
+
+**Setup & Administration:**
+
+1. **[MULTI_TENANCY.md](docs/MULTI_TENANCY.md)** ⭐⭐⭐ **Multi-tenant architecture**
+   - Admin mode vs. Tenant mode
+   - Creating and managing tenants
+   - Credential management and rotation
+   - State isolation per tenant
+
+2. **[PLATFORM_ADMIN_GUIDE.md](docs/PLATFORM_ADMIN_GUIDE.md)** ⭐⭐⭐ **Platform admin guide**
+   - Initial infrastructure setup
+   - Creating and managing tenants
+   - Monitoring and alerts
+   - Best practices and troubleshooting
+
+**Architecture & Implementation:**
+
+3. **[CLI_ARCHITECTURE.md](docs/CLI_ARCHITECTURE.md)** ⭐ **Start here - CLI tool design**
    - **Important**: Deployer is a CLI tool, not a backend service
    - Initial setup and configuration
    - How the CLI works
    - User workflow
 
-2. **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** ⭐ System architecture
+4. **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** ⭐ System architecture
    - System architecture and design
    - API groups and resource types
    - State management and locking strategy
    - Security and observability
 
-3. **[E2E_IMPLEMENTATION_AND_TESTING_PLAN.md](docs/E2E_IMPLEMENTATION_AND_TESTING_PLAN.md)** ⭐ Implementation guide
+5. **[E2E_IMPLEMENTATION_AND_TESTING_PLAN.md](docs/E2E_IMPLEMENTATION_AND_TESTING_PLAN.md)** ⭐ Implementation guide
    - Complete 18-week implementation plan
    - Detailed code examples for each phase
    - Comprehensive testing strategy
    - Deployment and rollout plan
 
-4. **[STATE_AND_LOCKING.md](docs/STATE_AND_LOCKING.md)** ⭐ Technical deep dive
+6. **[STATE_AND_LOCKING.md](docs/STATE_AND_LOCKING.md)** ⭐ Technical deep dive
    - S3 state backend implementation
    - DynamoDB lock manager with code
    - Lock lifecycle and error handling
    - Monitoring and observability
 
-5. **[IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)**
+7. **[IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)**
    - High-level milestones
    - Infrastructure requirements
    - Success metrics
@@ -41,19 +58,25 @@ This repository contains the complete design, implementation plan, and documenta
 
 **🚀 Start Here (In Order):**
 
-1. **[QUICKSTART.md](QUICKSTART.md)** ⭐⭐⭐ **READ THIS FIRST**
+1. **[MULTI_TENANT_QUICKSTART.md](MULTI_TENANT_QUICKSTART.md)** ⭐⭐⭐ **MULTI-TENANT SETUP**
+   - How multi-tenant mode works
+   - Platform team vs. dev team responsibilities
+   - Complete workflow for both sides
+   - Credential management
+
+2. **[QUICKSTART.md](QUICKSTART.md)** ⭐⭐⭐ **OVERVIEW**
    - 5-minute overview of the 3-phase journey
    - What platform team does vs. what you do
    - Visual diagrams and examples
    - Benefits and FAQs
 
-2. **[HOW_TEAMS_USE_DEPLOYER.md](HOW_TEAMS_USE_DEPLOYER.md)** ⭐⭐⭐ **THEN READ THIS**
+3. **[HOW_TEAMS_USE_DEPLOYER.md](HOW_TEAMS_USE_DEPLOYER.md)** ⭐⭐⭐ **VISUAL WALKTHROUGH**
    - Complete visual walkthrough
    - Timeline from Day 0 to Month 2
    - Real terminal output examples
    - How the Notifications Team used it
 
-3. **[GETTING_STARTED_GUIDE.md](docs/GETTING_STARTED_GUIDE.md)** ⭐⭐⭐ **DETAILED GUIDE**
+4. **[GETTING_STARTED_GUIDE.md](docs/GETTING_STARTED_GUIDE.md)** ⭐⭐⭐ **DETAILED GUIDE**
    - Complete onboarding guide
    - Step-by-step from zero to deployed
    - Practical examples
@@ -61,13 +84,13 @@ This repository contains the complete design, implementation plan, and documenta
 
 **Daily Reference:**
 
-4. **[USER_WORKFLOWS.md](docs/USER_WORKFLOWS.md)** ⭐ Complete guide
+5. **[USER_WORKFLOWS.md](docs/USER_WORKFLOWS.md)** ⭐ Complete guide
    - How to deploy a new service
    - Common workflows with examples
    - Day-to-day operations
    - Troubleshooting guide
 
-5. **[END_USER_SUMMARY.md](docs/END_USER_SUMMARY.md)** ⭐ Quick reference
+6. **[END_USER_SUMMARY.md](docs/END_USER_SUMMARY.md)** ⭐ Quick reference
    - Quick start
    - Daily operations
    - Complete workflow examples

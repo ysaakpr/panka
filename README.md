@@ -2,17 +2,26 @@
 
 A Golang-based deployment management system for managing application deployments on AWS using ECS/Fargate/EKS with Pulumi as the backend orchestrator.
 
+> **📖 New to Deployer? Read [COMPLETE_OVERVIEW.md](COMPLETE_OVERVIEW.md) for a comprehensive introduction!**
+
 ## Overview
 
 Deployer is a **command-line tool** (similar to Terraform or Pulumi) that enables teams to deploy and manage their applications on AWS with a simple, declarative YAML-based configuration.
 
 **Key Points:**
 - **CLI tool** - No backend service to maintain
+- **Multi-tenant** - Isolated environments for each team
 - **User-controlled infrastructure** - You provide S3 bucket and DynamoDB table
 - **Git-based workflow** - YAML files in your repository
 - **CI/CD friendly** - Runs in GitHub Actions, GitLab CI, etc.
 
 It handles all the complexity of infrastructure provisioning, state management, and deployment orchestration.
+
+### Two Deployment Models
+
+1. **Multi-Tenant** (Recommended): Platform team manages tenants, teams login with tenant credentials
+   - See [MULTI_TENANT_QUICKSTART.md](MULTI_TENANT_QUICKSTART.md) for complete guide
+2. **Single-Tenant**: Each team configures their own backend directly
 
 ### Key Features
 
@@ -38,6 +47,25 @@ It handles all the complexity of infrastructure provisioning, state management, 
 
 ### One-Time Setup
 
+**Option A: Multi-Tenant (Recommended)**
+
+```bash
+# 1. Install deployer CLI
+curl -sSL https://deployer.io/install.sh | sh
+deployer version
+
+# 2. Login with tenant credentials (provided by platform team)
+deployer login
+# Prompts for:
+# - Tenant Name: your-team
+# - Tenant Secret: (provided by admin)
+# - S3 Bucket: company-deployer-state
+# - AWS Region: us-east-1
+# ✓ Logged in as: your-team
+```
+
+**Option B: Single-Tenant**
+
 ```bash
 # 1. Install deployer CLI
 curl -sSL https://deployer.io/install.sh | sh
@@ -57,6 +85,8 @@ deployer backend create \
   --table company-deployer-locks \
   --region us-east-1
 ```
+
+> See [MULTI_TENANCY.md](docs/MULTI_TENANCY.md) for multi-tenant architecture details.
 
 ### Deploy Your Application
 

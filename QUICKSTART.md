@@ -114,12 +114,21 @@ deployment-repo/
 curl -sSL https://deployer.io/install.sh | sh
 deployer version
 
-# 2. Configure backend (2 minutes)
-deployer init
-? S3 Bucket: company-deployer-state
-? DynamoDB Table: company-deployer-locks
+# 2. Login with tenant credentials (2 minutes)
+# Platform team provides: tenant name + secret
+deployer login
+? Tenant: notifications-team
+? Secret: ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG
+? Bucket: company-deployer-state
 ? Region: us-east-1
-✓ Saved to ~/.deployer/config.yaml
+✓ Logged in as: notifications-team
+
+# (Alternative: Single-tenant mode)
+# deployer init
+# ? S3 Bucket: company-deployer-state
+# ? DynamoDB Table: company-deployer-locks
+# ? Region: us-east-1
+# ✓ Saved to ~/.deployer/config.yaml
 
 # 3. Clone deployment repo (1 minute)
 git clone git@github.com:company/deployment-repo.git

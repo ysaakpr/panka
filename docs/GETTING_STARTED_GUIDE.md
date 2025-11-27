@@ -199,12 +199,36 @@ make build
 sudo mv bin/deployer /usr/local/bin/
 ```
 
-### Step 2: Configure Backend
+### Step 2: Login (Multi-Tenant Setup)
 
-Configure deployer to use the shared backend:
+**If your organization uses multi-tenant mode:**
 
 ```bash
-# Interactive configuration
+# Login with tenant credentials
+deployer login
+
+# Prompts:
+? Tenant Name: notifications-team
+? Tenant Secret: ntfy_7Kx9pLmQ2wR8vN3jH6tY4bZ1cF5aS0dG
+? S3 Bucket: company-deployer-state
+? Region: us-east-1
+
+Authenticating...
+✓ Logged in as: notifications-team
+
+Session saved to ~/.deployer/session
+```
+
+**What the platform team provides:**
+- Tenant name (e.g., `notifications-team`)
+- Tenant secret (e.g., `ntfy_...`)
+- S3 bucket name
+- AWS region
+
+**If your organization uses single-tenant mode (legacy):**
+
+```bash
+# Configure backend directly
 deployer init
 
 # Prompts:
@@ -215,29 +239,7 @@ deployer init
 ✓ Configuration saved to ~/.deployer/config.yaml
 ```
 
-**Or create config file manually:**
-
-```bash
-mkdir -p ~/.deployer
-
-cat > ~/.deployer/config.yaml << 'EOF'
-version: v1
-
-backend:
-  type: s3
-  region: us-east-1
-  bucket: company-deployer-state
-  
-locks:
-  type: dynamodb
-  region: us-east-1
-  table: company-deployer-locks
-
-aws:
-  profile: default
-  region: us-east-1
-EOF
-```
+> **Note**: Multi-tenant mode is recommended for organizations with multiple teams. It provides better isolation, security, and cost tracking. See [MULTI_TENANCY.md](MULTI_TENANCY.md) for details.
 
 ### Step 3: Configure AWS Credentials
 
