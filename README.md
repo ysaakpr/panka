@@ -4,7 +4,15 @@ A Golang-based deployment management system for managing application deployments
 
 ## Overview
 
-Deployer enables teams to deploy and manage their applications on AWS with a simple, declarative YAML-based configuration. It handles all the complexity of infrastructure provisioning, state management, and deployment orchestration.
+Deployer is a **command-line tool** (similar to Terraform or Pulumi) that enables teams to deploy and manage their applications on AWS with a simple, declarative YAML-based configuration.
+
+**Key Points:**
+- **CLI tool** - No backend service to maintain
+- **User-controlled infrastructure** - You provide S3 bucket and DynamoDB table
+- **Git-based workflow** - YAML files in your repository
+- **CI/CD friendly** - Runs in GitHub Actions, GitLab CI, etc.
+
+It handles all the complexity of infrastructure provisioning, state management, and deployment orchestration.
 
 ### Key Features
 
@@ -28,32 +36,55 @@ Deployer enables teams to deploy and manage their applications on AWS with a sim
 - Docker (for building container images)
 - Git
 
-### Installation
+### One-Time Setup
 
 ```bash
-# Install deployer CLI
+# 1. Install deployer CLI
 curl -sSL https://deployer.io/install.sh | sh
+deployer version
 
-# Verify installation
-deployer --version
+# 2. Configure backend (interactive)
+deployer init
+# Prompts for:
+# - AWS Region: us-east-1
+# - S3 Bucket: company-deployer-state
+# - DynamoDB Table: company-deployer-locks
+# - AWS Profile: default
+
+# 3. Create backend infrastructure (one-time per organization)
+deployer backend create \
+  --bucket company-deployer-state \
+  --table company-deployer-locks \
+  --region us-east-1
 ```
 
-### Initial Setup
+### Deploy Your Application
 
 ```bash
-# Clone your deployment repository
+# 1. Clone your deployment repository
 git clone git@github.com:company/deployment-repo.git
 cd deployment-repo
 
-# Validate your stack configuration
-deployer validate --stack user-platform --environment development
+# 2. Validate your stack configuration
+deployer validate --stack user-platform
 
-# Preview deployment
-deployer plan --stack user-platform --environment development --var VERSION=v1.0.0
+# 3. Preview deployment
+deployer plan \
+  --stack user-platform \
+  --environment development \
+  --var VERSION=v1.0.0
 
-# Deploy
-deployer apply --stack user-platform --environment development --var VERSION=v1.0.0
+# 4. Deploy
+deployer apply \
+  --stack user-platform \
+  --environment development \
+  --var VERSION=v1.0.0
+
+# 5. Check status
+deployer status --stack user-platform --environment development
 ```
+
+**That's it!** The deployer CLI handles everything: parsing YAML, managing state in S3, locking via DynamoDB, and deploying via Pulumi.
 
 ## Core Concepts
 
@@ -440,9 +471,25 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 - [ ] Security audit
 - [ ] Performance benchmarks
 
+## 📚 Documentation
+
+### 🚀 New to Deployer? Start Here!
+
+1. **[QUICKSTART.md](QUICKSTART.md)** ⭐⭐⭐ - 5-minute overview of how deployer works
+2. **[HOW_TEAMS_USE_DEPLOYER.md](HOW_TEAMS_USE_DEPLOYER.md)** ⭐⭐⭐ - Visual walkthrough with complete examples
+3. **[GETTING_STARTED_GUIDE.md](docs/GETTING_STARTED_GUIDE.md)** ⭐⭐⭐ - Complete step-by-step onboarding guide
+
+### 📖 Complete Documentation
+
+- **[INDEX.md](INDEX.md)** - Complete index of all documentation
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and design
+- **[USER_WORKFLOWS.md](docs/USER_WORKFLOWS.md)** - Common workflows and examples
+- **[STATE_AND_LOCKING.md](docs/STATE_AND_LOCKING.md)** - State management and DynamoDB locking
+- **[E2E_IMPLEMENTATION_AND_TESTING_PLAN.md](docs/E2E_IMPLEMENTATION_AND_TESTING_PLAN.md)** - Implementation plan
+
 ## Quick Links
 
-- [Getting Started](docs/USER_WORKFLOWS.md#quick-start)
+- [Getting Started](docs/GETTING_STARTED_GUIDE.md)
 - [Common Workflows](docs/USER_WORKFLOWS.md#common-workflows)
 - [Troubleshooting](docs/USER_WORKFLOWS.md#troubleshooting)
 - [Best Practices](docs/USER_WORKFLOWS.md#best-practices)

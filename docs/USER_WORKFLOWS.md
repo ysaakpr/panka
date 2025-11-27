@@ -34,7 +34,34 @@ As an application development team, you will:
 
 ## Initial Setup
 
-### Step 1: Get Access to Deployment Repository
+### Step 1: Install Deployer CLI
+
+```bash
+# Install deployer
+curl -sSL https://deployer.io/install.sh | sh
+
+# Verify installation
+deployer version
+```
+
+### Step 2: Configure Backend (First Time Only)
+
+```bash
+# Initialize deployer
+deployer init
+
+# Interactive prompts:
+? AWS Region: us-east-1
+? S3 Bucket for state: company-deployer-state
+? DynamoDB Table for locks: company-deployer-locks
+? AWS Profile (optional): default
+
+# This creates: ~/.deployer/config.yaml
+```
+
+**Note**: Your platform team will provide the S3 bucket and DynamoDB table names.
+
+### Step 3: Get Access to Deployment Repository
 
 ```bash
 # Clone the deployment repository
@@ -42,7 +69,7 @@ git clone git@github.com:company/deployment-repo.git
 cd deployment-repo
 ```
 
-### Step 2: Understand the Structure
+### Step 4: Understand the Structure
 
 Your team's service lives in a specific stack:
 

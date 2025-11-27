@@ -4,6 +4,59 @@
 
 Deployer is a Golang-based deployment management system for managing application deployments on AWS using ECS/Fargate/EKS with Pulumi as the backend orchestrator.
 
+## Initial Setup
+
+### Step 1: Install CLI
+
+```bash
+# Install deployer
+curl -sSL https://deployer.io/install.sh | sh
+
+# Or download from releases
+# Or build from source
+```
+
+### Step 2: Configure Backend
+
+User provides their own infrastructure:
+
+```bash
+# Initialize deployer (interactive)
+deployer init
+
+# Prompts for:
+# - AWS Region
+# - S3 Bucket name (for state)
+# - DynamoDB Table name (for locks)
+# - AWS Profile (optional)
+
+# Creates: ~/.deployer/config.yaml
+```
+
+### Step 3: Create Backend Infrastructure (One-Time)
+
+```bash
+# Option A: Use deployer to create
+deployer backend create \
+  --bucket company-deployer-state \
+  --table company-deployer-locks
+
+# Option B: Use Terraform (provided)
+cd infrastructure/terraform
+terraform apply
+
+# Option C: Create manually in AWS Console
+```
+
+**Required Resources:**
+- S3 bucket (with versioning enabled)
+- DynamoDB table (with TTL enabled)
+- IAM permissions for CLI user/role
+
+See [CLI_ARCHITECTURE.md](CLI_ARCHITECTURE.md) for complete details.
+
+---
+
 ## Core Concepts
 
 ### Stack
@@ -23,9 +76,13 @@ A **component** is a single deployable unit - can be:
 
 ## System Architecture
 
+**Important**: Deployer is a **CLI tool** (like Terraform or Pulumi), not a backend service.
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         DEPLOYER CLI                             │
+│                   USER'S MACHINE / CI RUNNER                      │
+│                                                                   │
+│                      deployer CLI (Binary)                        │
 │                                                                   │
 │  ┌──────────────┐    ┌──────────────┐    ┌─────────────┐       │
 │  │  Discovery   │───▶│ Reconciler   │───▶│  Executor   │       │
@@ -43,6 +100,7 @@ A **component** is a single deployable unit - can be:
                               ▼
                     ┌──────────────────┐
                     │   AWS Services   │
+                    │  (User Provides) │
                     ├──────────────────┤
                     │ • S3 (State)     │
                     │ • DynamoDB (Lock)│
@@ -52,6 +110,12 @@ A **component** is a single deployable unit - can be:
                     │ • SQS, S3, etc.  │
                     └──────────────────┘
 ```
+
+**Key Points**:
+- CLI runs on user's machine or in CI/CD
+- No "deployer service" running in the cloud
+- Users provide their own S3 bucket and DynamoDB table
+- CLI exits after deployment completes
 
 ## API Groups
 
