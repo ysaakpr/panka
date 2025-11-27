@@ -1,0 +1,188 @@
+# Example: Simple microservice stack with RDS database
+---
+apiVersion: core.panka.io/v1
+kind: Stack
+metadata:
+  name: demo-stack
+  description: Demo application stack
+  labels:
+    environment: dev
+    team: platform
+spec:
+  provider:
+    name: aws
+    region: us-east-1
+    accountId: "123456789012"
+  variables:
+    VERSION: "1.0.0"
+    ENVIRONMENT: "dev"
+    DOMAIN: "example.com"
+
+---
+apiVersion: core.panka.io/v1
+kind: Service
+metadata:
+  name: backend-api
+  stack: demo-stack
+  description: Backend API service
+spec:
+  variables:
+    IMAGE_REPO: "myregistry/backend"
+    PORT: "8080"
+
+---
+apiVersion: components.panka.io/v1
+kind: MicroService
+metadata:
+  name: api-server
+  service: backend-api
+  stack: demo-stack
+  description: Main API server
+spec:
+  image:
+    repository: ${backend-api.IMAGE_REPO}
+    tag: ${VERSION}
+    pullPolicy: Always
+  runtime:
+    platform: fargate
+  ports:
+    - name: http
+      port: 8080
+      protocol: tcp
+  environment:
+    - name: ENV
+      value: ${ENVIRONMENT}
+    - name: PORT
+      value: ${backend-api.PORT}
+    - name: DB_HOST
+      valueFrom:
+        component: main-db
+        output: endpoint
+  secrets:
+    - name: db-password
+      secretRef: prod/db/password
+      envVar: DB_PASSWORD
+  dependsOn:
+    - main-db
+
+---
+apiVersion: components.panka.io/v1
+kind: RDS
+metadata:
+  name: main-db
+  service: backend-api
+  stack: demo-stack
+  description: PostgreSQL database
+spec:
+  engine:
+    type: postgres
+    version: "14.7"
+    parameters:
+      max_connections: "200"
+      shared_buffers: "256MB"
+  instance:
+    class: db.t3.medium
+    storage:
+      type: gp3
+      allocatedGB: 100
+      maxAllocatedGB: 500
+    multiAZ: true
+  database:
+    name: appdb
+    username: dbadmin
+    passwordSecret:
+      ref: prod/db/password
+    port: 5432
+  backup:
+    enabled: true
+    retentionDays: 7
+    preferredWindow: "03:00-04:00"
+    maintenanceWindow: "mon:04:00-mon:05:00"
+
+---
+apiVersion: components.panka.io/v1
+kind: S3
+metadata:
+  name: uploads-bucket
+  service: backend-api
+  stack: demo-stack
+  description: User file uploads
+spec:
+  bucket:
+    acl: private
+    forceDestroy: false
+    tags:
+      Purpose: "user-uploads"
+  versioning:
+    enabled: true
+  encryption:
+    enabled: true
+    algorithm: AES256
+  lifecycle:
+    - id: archive-old-files
+      enabled: true
+      prefix: "uploads/"
+      transitions:
+        - days: 30
+          storageClass: STANDARD_IA
+        - days: 90
+          storageClass: GLACIER
+      expiration:
+        days: 365
+  cors:
+    allowedOrigins:
+      - "https://${DOMAIN}"
+    allowedMethods:
+      - GET
+      - POST
+      - PUT
+    allowedHeaders:
+      - "*"
+    maxAgeSeconds: 3600
+
+---
+apiVersion: components.panka.io/v1
+kind: SQS
+metadata:
+  name: processing-queue
+  service: backend-api
+  stack: demo-stack
+  description: Async processing queue
+spec:
+  type: standard
+  messageRetentionPeriod: 345600  # 4 days
+  visibilityTimeout: 300  # 5 minutes
+  receiveWaitTime: 20  # Long polling
+  deadLetterQueue:
+    enabled: true
+    maxReceiveCount: 3
+
+---
+apiVersion: components.panka.io/v1
+kind: DynamoDB
+metadata:
+  name: sessions-table
+  service: backend-api
+  stack: demo-stack
+  description: User sessions
+spec:
+  billingMode: PAY_PER_REQUEST
+  hashKey:
+    name: userId
+    type: S
+  rangeKey:
+    name: sessionId
+    type: S
+  globalSecondaryIndexes:
+    - name: SessionIdIndex
+      hashKey:
+        name: sessionId
+        type: S
+      projection: ALL
+  ttl:
+    enabled: true
+    attributeName: expiresAt
+  encryption:
+    enabled: true
+  pointInTimeRecovery: true
+

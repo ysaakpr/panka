@@ -4,6 +4,13 @@ A Golang-based deployment management system for managing application deployments
 
 > **📖 New to Panka? Read [COMPLETE_OVERVIEW.md](COMPLETE_OVERVIEW.md) for a comprehensive introduction!**
 
+> **🚀 Development Update**: Phase 2 COMPLETE! ✅
+> - **Phase 1**: Foundation (logging, config, state, locks) ✅
+> - **Phase 2**: YAML Parser & Validator (10+ resource types, 29 tests) ✅
+> - **Next**: Phase 3 - Resource Discovery & Graph Building
+> 
+> See [PHASE2_COMPLETE.md](PHASE2_COMPLETE.md) and [README_PHASE2.md](README_PHASE2.md) for details.
+
 ## Overview
 
 Panka is a **command-line tool** (similar to Terraform or Pulumi) that enables teams to deploy and manage their applications on AWS with a simple, declarative YAML-based configuration.
