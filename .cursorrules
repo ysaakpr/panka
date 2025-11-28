@@ -1,0 +1,714 @@
+# Panka Project Rules for AI Assistants
+
+## Project Overview
+Panka is a multi-tenant infrastructure deployment tool written in Go that manages cloud resources declaratively using YAML configuration. It features state management with S3, distributed locking with DynamoDB, and complete tenant isolation.
+
+## Core Principles
+1. **Multi-tenancy First**: All state and lock operations must respect tenant isolation
+2. **Declarative Configuration**: Infrastructure defined in YAML, not code
+3. **Dependency-Aware**: Always consider resource dependencies and deployment ordering
+4. **State Management**: S3 for state, DynamoDB for locks, both with tenant prefixing
+5. **Security**: Bcrypt for credentials, session-based auth, IAM integration
+
+---
+
+## Code Structure & Organization
+
+### Directory Structure (ALWAYS FOLLOW)
+```
+panka/
+├── cmd/panka/              # CLI entry point (main.go only)
+├── internal/
+│   ├── cli/                # Cobra commands (one file per command)
+│   └── logger/             # Logging utilities
+├── pkg/
+│   ├── config/             # Configuration management
+│   ├── state/              # State backend (S3)
+│   ├── lock/               # Lock manager (DynamoDB)
+│   ├── parser/             # YAML parser & validator
+│   ├── graph/              # Dependency graph & planning
+│   ├── provider/           # Provider interfaces
+│   │   └── aws/            # AWS resource providers
+│   └── tenant/             # Multi-tenancy system
+├── docs/                   # User documentation
+│   ├── quickstart/         # Getting started guides
+│   ├── reference/          # Reference docs
+│   └── dev/                # Development changelogs
+├── examples/               # Example configurations
+└── test/                   # Integration tests
+```
+
+### File Naming Conventions
+- Go files: `lowercase_with_underscores.go`
+- Test files: `*_test.go` (always alongside source)
+- Docs: `UPPERCASE_WITH_UNDERSCORES.md`
+- Config: `.lowercase` or `lowercase.yaml`
+
+---
+
+## Go Code Standards
+
+### Package Organization
+1. **ONE package per directory** (except _test packages)
+2. **Internal packages** (`internal/`) are private to this project
+3. **Public packages** (`pkg/`) can be imported by others
+4. **No circular dependencies** - enforce with build tags if needed
+
+### Code Style
+```go
+// ✅ GOOD: Clear, documented, idiomatic Go
+package provider
+
+import (
+    "context"
+    "fmt"
+    
+    "github.com/yourusername/panka/pkg/state"
+)
+
+// ResourceProvider defines operations for managing cloud resources.
+// All implementations must be idempotent and support dry-run mode.
+type ResourceProvider interface {
+    // Create creates a new resource. Returns error if resource already exists.
+    Create(ctx context.Context, resource *Resource, opts *Options) (*Result, error)
+    
+    // Update updates an existing resource. Returns error if not found.
+    Update(ctx context.Context, resource *Resource, opts *Options) (*Result, error)
+}
+
+// ❌ BAD: Poor naming, no docs, unclear return types
+type RP interface {
+    Create(r *Res) error
+}
+```
+
+### Error Handling (CRITICAL)
+```go
+// ✅ GOOD: Wrap errors with context
+if err := backend.Save(ctx, key, state); err != nil {
+    return fmt.Errorf("failed to save state to S3 (key=%s): %w", key, err)
+}
+
+// ✅ GOOD: Log before returning
+log.Error("Failed to acquire lock", 
+    zap.String("lock_id", lockID),
+    zap.Error(err))
+return fmt.Errorf("failed to acquire lock: %w", err)
+
+// ❌ BAD: Swallowing errors
+err := something()
+// continuing without handling
+
+// ❌ BAD: Generic error messages
+return errors.New("error")
+```
+
+### Logging Standards
+```go
+// ✅ GOOD: Structured logging with context
+logger.Info("Creating resource",
+    zap.String("type", resource.Type),
+    zap.String("name", resource.Name),
+    zap.String("tenant", tenantID))
+
+// ✅ GOOD: Different log levels appropriately
+logger.Debug("Detailed state", zap.Any("state", state))  // Debug
+logger.Info("User action completed")                     // Info
+logger.Warn("Retrying after failure", zap.Error(err))    // Warn
+logger.Error("Operation failed", zap.Error(err))         // Error
+
+// ❌ BAD: Unstructured logging
+log.Println("Creating resource:", resource.Name)
+```
+
+### Testing Requirements
+```go
+// ✅ EVERY public function needs tests
+// ✅ Test file naming: <source>_test.go
+// ✅ Test function naming: Test<Function>_<Scenario>
+
+func TestS3Backend_Save_Success(t *testing.T) {
+    // Arrange
+    backend := setupTestBackend(t)
+    state := &State{...}
+    
+    // Act
+    err := backend.Save(context.Background(), "test-key", state)
+    
+    // Assert
+    assert.NoError(t, err)
+    assert.FileExists(t, "path/to/state")
+}
+
+func TestTenantManager_CreateTenant_DuplicateName(t *testing.T) {
+    // Test error cases too!
+}
+```
+
+---
+
+## Multi-Tenancy Integration (ALWAYS CONSIDER)
+
+### Tenant Context Propagation
+```go
+// ✅ ALWAYS: Load and pass tenant context
+tenantCtx, _ := tenant.LoadTenantContext()
+ctx := tenant.WithTenant(context.Background(), tenantCtx)
+
+// ✅ ALWAYS: Use tenant-aware wrappers
+backend := state.NewTenantAwareBackend(s3Backend)
+lockMgr := lock.NewTenantAwareManager(dynamoDBMgr)
+
+// ❌ NEVER: Use raw backends directly in CLI commands
+backend := state.NewS3Backend(cfg)  // Missing tenant isolation!
+```
+
+### State Key Patterns
+```
+Single-tenant:  stacks/<stack>/<env>/state.json
+Multi-tenant:   tenants/<tenant-id>/v1/stacks/<stack>/<env>/state.json
+```
+
+### Lock Key Patterns
+```
+Single-tenant:  stack:<stack>:env:<env>
+Multi-tenant:   tenant:<tenant-id>:stack:<stack>:env:<env>
+```
+
+---
+
+## CLI Command Standards
+
+### Command Structure (Cobra)
+```go
+// ✅ GOOD: Clear command definition
+var myCmd = &cobra.Command{
+    Use:   "mycommand <arg>",
+    Short: "One-line description",
+    Long: `Detailed description explaining:
+    • What it does
+    • When to use it
+    • Required permissions
+    • Examples`,
+    Args:  cobra.ExactArgs(1),  // Validate args
+    RunE:  runMyCommand,         // Use RunE for error handling
+}
+
+func init() {
+    rootCmd.AddCommand(myCmd)
+    myCmd.Flags().StringVar(&myFlag, "flag", "default", "description")
+}
+
+func runMyCommand(cmd *cobra.Command, args []string) error {
+    // 1. Validate input
+    // 2. Load configuration
+    // 3. Create logger
+    // 4. Execute operation
+    // 5. Return error (don't call os.Exit)
+    return nil
+}
+```
+
+### User Output (Use Colors)
+```go
+green := color.New(color.FgGreen, color.Bold)
+cyan := color.New(color.FgCyan, color.Bold)
+red := color.New(color.FgRed, color.Bold)
+yellow := color.New(color.FgYellow)
+
+green.Println("✓ Operation successful")
+cyan.Println("ℹ️  Information message")
+yellow.Println("⚠️  Warning message")
+red.Println("✗ Error occurred")
+
+// Use progress indicators
+fmt.Println("Creating tenant...")
+fmt.Println("├── Validating name... ✓")
+fmt.Println("├── Generating credentials... ✓")
+fmt.Println("└── Complete ✓")
+```
+
+---
+
+## Documentation Standards
+
+### Code Documentation
+```go
+// ✅ GOOD: Complete package documentation
+// Package provider defines interfaces and implementations for managing
+// cloud resources across different providers (AWS, GCP, Azure).
+//
+// All providers must implement the Provider interface and support:
+//   - Idempotent operations
+//   - Dry-run mode
+//   - Tenant isolation
+//   - Structured logging
+package provider
+
+// ✅ GOOD: Function documentation
+// Create creates a new AWS S3 bucket with the specified configuration.
+// It returns an error if the bucket already exists or if AWS credentials
+// are invalid. The operation is idempotent - calling it multiple times
+// with the same configuration will not create duplicate buckets.
+//
+// Parameters:
+//   - ctx: Context for cancellation and tenant information
+//   - config: Bucket configuration including name, region, tags
+//   - opts: Options including DryRun and Tags
+//
+// Returns:
+//   - Result with bucket ARN and status
+//   - Error if creation fails
+func (p *S3Provider) Create(ctx context.Context, config *Config, opts *Options) (*Result, error) {
+```
+
+### README & Documentation Files
+Every feature/package needs:
+1. **README** - Overview, installation, quick start
+2. **Architecture doc** - How it works, design decisions
+3. **User guide** - Step-by-step workflows
+4. **API reference** - Function/type documentation
+
+### Documentation Location
+```
+docs/
+├── quickstart/           # User guides (start here)
+│   ├── QUICKSTART.md     # 5-minute start
+│   ├── QUICKSTART_CLI.md # CLI reference
+│   └── SETUP_AWS_CREDENTIALS.md
+├── reference/            # Deep technical docs
+│   ├── S3_STATE_STRUCTURE.md
+│   └── COMPLETE_OVERVIEW.md
+└── dev/                  # Implementation logs (AI-generated)
+    ├── PHASE*_COMPLETE.md
+    └── DEVELOPMENT_PROGRESS.md
+```
+
+### When Creating New Docs
+1. **User-facing** → `docs/` or `docs/quickstart/`
+2. **Reference** → `docs/reference/`
+3. **Dev changelog** → `docs/dev/`
+4. **Always update** → `INDEX.md` with new doc links
+
+---
+
+## Git & Version Control
+
+### Commit Messages
+```bash
+# ✅ GOOD: Clear, structured commit
+feat(tenant): implement credential rotation
+
+- Add RotateTenantCredentials method to manager
+- Generate new bcrypt hash on rotation
+- Update tenants.yaml with new credentials
+- Add rotation counter and timestamp
+- Test credential rotation flow
+
+Closes #123
+
+# ✅ GOOD: Conventional commits format
+feat: add new feature
+fix: resolve bug
+docs: update documentation
+test: add tests
+refactor: improve code structure
+chore: maintenance tasks
+
+# ❌ BAD: Vague commit messages
+"updates"
+"fix"
+"WIP"
+```
+
+### Branch Strategy
+- `main` - stable, always deployable
+- `feature/feature-name` - new features
+- `fix/bug-description` - bug fixes
+- `docs/what-changed` - documentation updates
+
+### What to Commit
+✅ DO commit:
+- Source code (`.go`, `.yaml` configs)
+- Tests
+- Documentation (`.md` files)
+- Examples
+- Build configs (`Makefile`, `.github/workflows/`)
+
+❌ DON'T commit:
+- Binaries (`bin/`, `*.exe`)
+- Dependencies (`vendor/`, `node_modules/`)
+- IDE files (`.vscode/`, `.idea/`)
+- Temporary files (`*.tmp`, `.DS_Store`)
+- Secrets (passwords, API keys)
+
+---
+
+## AWS Integration Patterns
+
+### SDK Usage (Always v2)
+```go
+// ✅ GOOD: AWS SDK v2
+import (
+    "github.com/aws/aws-sdk-go-v2/aws"
+    "github.com/aws/aws-sdk-go-v2/config"
+    "github.com/aws/aws-sdk-go-v2/service/s3"
+)
+
+cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+client := s3.NewFromConfig(cfg)
+
+// ❌ BAD: AWS SDK v1 (deprecated)
+import "github.com/aws/aws-sdk-go/aws"
+```
+
+### Resource Tagging
+```go
+// ✅ ALWAYS: Tag AWS resources
+tags := map[string]string{
+    "ManagedBy":   "panka",
+    "Environment": environment,
+    "Stack":       stackName,
+    "Tenant":      tenantID,  // If multi-tenant
+}
+```
+
+### Error Handling
+```go
+// ✅ GOOD: Check AWS-specific errors
+var nsk *types.NoSuchKey
+if errors.As(err, &nsk) {
+    return nil, fmt.Errorf("state not found: %w", err)
+}
+
+// ✅ GOOD: Check specific error codes
+if strings.Contains(err.Error(), "NoSuchBucket") {
+    return fmt.Errorf("bucket does not exist: %w", err)
+}
+```
+
+---
+
+## State Management Rules
+
+### State File Format
+```json
+{
+  "version": "1.0.0",
+  "metadata": {
+    "stack": "stack-name",
+    "environment": "production",
+    "tenant_id": "tenant-name",
+    "deployed_by": "user@example.com",
+    "created_at": "2024-11-27T10:00:00Z",
+    "updated_at": "2024-11-27T12:00:00Z"
+  },
+  "resources": {
+    "resource-id": {
+      "id": "resource-id",
+      "type": "AWS::S3::Bucket",
+      "status": "ready",
+      "attributes": { ... }
+    }
+  }
+}
+```
+
+### State Operations
+```go
+// ✅ ALWAYS: Lock before state operations
+lock, err := lockMgr.Acquire(ctx, lockKey, 5*time.Minute, owner)
+defer lockMgr.Release(ctx, lock)
+
+// ✅ ALWAYS: Re-read state after acquiring lock
+state, err := backend.Load(ctx, stateKey)
+
+// ✅ ALWAYS: Update metadata
+state.Metadata.UpdatedAt = time.Now()
+state.Metadata.DeployedBy = user
+
+// ✅ ALWAYS: Save atomically
+if err := backend.Save(ctx, stateKey, state); err != nil {
+    return fmt.Errorf("failed to save state: %w", err)
+}
+```
+
+---
+
+## Security Requirements
+
+### Credentials
+```go
+// ✅ GOOD: Bcrypt for password hashing
+hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+// ✅ GOOD: Verify with constant-time comparison
+err := bcrypt.CompareHashAndPassword(hash, []byte(provided))
+
+// ❌ BAD: Plain text passwords
+password := "secret123"
+
+// ❌ BAD: Weak hashing
+hash := md5.Sum([]byte(password))
+```
+
+### Session Management
+```go
+// ✅ GOOD: Time-limited sessions
+session := &Session{
+    Authenticated: time.Now(),
+    Expires:       time.Now().Add(8 * time.Hour),  // Admin: 8h
+    // or
+    Expires:       time.Now().Add(7 * 24 * time.Hour),  // Tenant: 7d
+}
+
+// ✅ GOOD: Check expiry
+if time.Now().After(session.Expires) {
+    return fmt.Errorf("session expired")
+}
+```
+
+### File Permissions
+```go
+// ✅ GOOD: Restrict session file permissions
+os.WriteFile(path, data, 0600)  // User read/write only
+
+// ❌ BAD: World-readable files
+os.WriteFile(path, data, 0644)
+```
+
+---
+
+## Performance & Optimization
+
+### Context Usage
+```go
+// ✅ ALWAYS: Accept context as first parameter
+func DoSomething(ctx context.Context, arg string) error
+
+// ✅ ALWAYS: Respect context cancellation
+select {
+case <-ctx.Done():
+    return ctx.Err()
+case result := <-ch:
+    return processResult(result)
+}
+
+// ✅ ALWAYS: Pass context to downstream calls
+err := downstream.Call(ctx, params)
+```
+
+### Resource Cleanup
+```go
+// ✅ ALWAYS: Use defer for cleanup
+file, err := os.Open("file.txt")
+if err != nil {
+    return err
+}
+defer file.Close()
+
+// ✅ ALWAYS: Close HTTP response bodies
+resp, err := client.Do(req)
+if err != nil {
+    return err
+}
+defer resp.Body.Close()
+```
+
+---
+
+## Development Workflow
+
+### Before Writing Code
+1. **Check existing patterns** - Look for similar implementations
+2. **Review interfaces** - Understand contracts before implementing
+3. **Plan for testing** - Think about test cases upfront
+4. **Consider tenancy** - Will this respect multi-tenant isolation?
+
+### While Writing Code
+1. **Write tests first** (TDD) or alongside implementation
+2. **Document as you go** - Add comments for complex logic
+3. **Log important operations** - Use structured logging
+4. **Handle errors properly** - Wrap with context
+
+### After Writing Code
+1. **Run tests**: `make test`
+2. **Check lint**: `make lint`
+3. **Build**: `make build`
+4. **Update docs** if adding features
+5. **Update INDEX.md** if adding documentation
+
+---
+
+## Common Patterns to Follow
+
+### Factory Pattern
+```go
+// ✅ For creating configured instances
+func NewS3Backend(cfg *Config) (*S3Backend, error) {
+    if cfg.Bucket == "" {
+        return nil, fmt.Errorf("bucket is required")
+    }
+    return &S3Backend{...}, nil
+}
+```
+
+### Interface-Based Design
+```go
+// ✅ Define interface for testability
+type Backend interface {
+    Save(ctx context.Context, key string, state *State) error
+    Load(ctx context.Context, key string) (*State, error)
+}
+
+// ✅ Accept interface, return concrete type
+func NewManager(backend Backend) *Manager {
+    return &Manager{backend: backend}
+}
+```
+
+### Option Pattern
+```go
+// ✅ For optional parameters
+type Options struct {
+    DryRun  bool
+    Tags    map[string]string
+    Timeout time.Duration
+}
+
+func Create(ctx context.Context, config *Config, opts *Options) error {
+    if opts == nil {
+        opts = &Options{Timeout: 30 * time.Second}
+    }
+    // ...
+}
+```
+
+---
+
+## Anti-Patterns to Avoid
+
+### ❌ DON'T: Global Variables
+```go
+// ❌ BAD
+var globalLogger *logger.Logger
+
+// ✅ GOOD: Pass dependencies
+type Service struct {
+    logger *logger.Logger
+}
+```
+
+### ❌ DON'T: Panic in Libraries
+```go
+// ❌ BAD
+if err != nil {
+    panic(err)
+}
+
+// ✅ GOOD: Return errors
+if err != nil {
+    return fmt.Errorf("operation failed: %w", err)
+}
+```
+
+### ❌ DON'T: Ignore Errors
+```go
+// ❌ BAD
+result, _ := DoSomething()
+
+// ✅ GOOD: Handle all errors
+result, err := DoSomething()
+if err != nil {
+    return fmt.Errorf("failed to do something: %w", err)
+}
+```
+
+---
+
+## Quick Reference
+
+### File to Edit for Common Tasks
+
+| Task | File(s) to Modify |
+|------|-------------------|
+| Add CLI command | `internal/cli/<command>.go` + `internal/cli/root.go` |
+| Add AWS resource | `pkg/provider/aws/<resource>.go` |
+| Add provider interface | `pkg/provider/types.go` |
+| Update state format | `pkg/state/types.go` |
+| Add tenant feature | `pkg/tenant/manager.go` |
+| Update config | `pkg/config/config.go` |
+| Add user guide | `docs/quickstart/<NAME>.md` + `INDEX.md` |
+| Add dev changelog | `docs/dev/<NAME>.md` |
+
+### Commands to Run
+
+```bash
+# Development
+make build          # Build binary
+make test           # Run tests
+make lint           # Run linter
+make fmt            # Format code
+
+# Testing
+make test-unit      # Unit tests only
+make test-integration  # Integration tests (requires LocalStack)
+
+# Cleanup
+make clean          # Remove built binaries
+```
+
+---
+
+## Key Reminders
+
+### ALWAYS:
+- ✅ Load tenant context in CLI commands
+- ✅ Use tenant-aware backend/lock wrappers
+- ✅ Document public functions and types
+- ✅ Write tests for new code
+- ✅ Handle errors with context
+- ✅ Use structured logging
+- ✅ Update INDEX.md when adding docs
+
+### NEVER:
+- ❌ Commit secrets or credentials
+- ❌ Use global variables
+- ❌ Panic in library code
+- ❌ Ignore errors
+- ❌ Skip tests
+- ❌ Use AWS SDK v1
+- ❌ Bypass tenant isolation
+
+---
+
+## Questions to Ask Yourself
+
+Before committing code:
+1. ✅ Does this respect tenant isolation?
+2. ✅ Are errors handled and logged?
+3. ✅ Is there a test for this?
+4. ✅ Is this documented?
+5. ✅ Does this follow Go idioms?
+6. ✅ Will this work in multi-tenant mode?
+7. ✅ Are AWS resources tagged?
+8. ✅ Is state locked during modifications?
+
+---
+
+## Version
+
+**Last Updated**: November 28, 2024  
+**Project Version**: 0.1.0-dev  
+**Go Version**: 1.21+
+
+---
+
+## Getting Help
+
+- **Documentation Index**: `INDEX.md`
+- **Architecture**: `docs/ARCHITECTURE.md`
+- **Contributing**: `docs/CONTRIBUTING.md`
+- **Examples**: `examples/`
+- **Development History**: `docs/dev/`
+

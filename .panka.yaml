@@ -1,0 +1,34 @@
+# Panka Configuration
+# Documentation: https://github.com/yourusername/panka
+
+# Backend configuration for state storage
+backend:
+  type: s3
+  bucket: d11dataplatform-panka-state  # Replace with your S3 bucket
+  region: us-east-1
+  prefix: states/
+  dynamodb_table: panka-locks  # For distributed locking
+
+# Logging configuration
+log:
+  level: info      # debug, info, warn, error
+  format: console  # console, json
+
+# Tenant mode (multi-tenant isolation)
+tenant:
+  mode: false    # Set to true for multi-tenant mode
+  # id: ""       # Tenant ID (required when mode=true)
+
+# AWS provider configuration
+providers:
+  aws:
+    region: us-east-1
+    # profile: AdministratorAccess-499063035928  # Use your SSO profile
+    # role_arn: ""      # IAM role to assume
+
+# Default tags applied to all resources
+default_tags:
+  managed_by: panka
+  environment: development
+  # team: platform
+  # cost_center: engineering
