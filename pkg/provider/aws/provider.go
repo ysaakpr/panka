@@ -37,9 +37,8 @@ type Provider struct {
 
 // NewProvider creates a new AWS provider
 func NewProvider() *Provider {
-	log, _ := logger.NewDevelopment()
 	return &Provider{
-		logger:            log,
+		logger:            logger.Global(),
 		resourceProviders: make(map[schema.Kind]provider.ResourceProvider),
 		initialized:       false,
 	}
@@ -181,7 +180,10 @@ func (p *Provider) registerResourceProviders() {
 	
 	// Register MicroService provider (ECS/Fargate)
 	p.resourceProviders[schema.KindMicroService] = NewECSProvider(p)
-	
+
+	// Register Lambda provider
+	p.resourceProviders[schema.KindLambda] = NewLambdaProvider(p)
+
 	p.logger.Info("Registered AWS resource providers",
 		zap.Int("count", len(p.resourceProviders)),
 	)

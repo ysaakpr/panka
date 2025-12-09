@@ -4,7 +4,39 @@ Welcome to Panka - a multi-tenant infrastructure deployment tool for managing cl
 
 ---
 
-## 🚀 Quick Start (Start Here!)
+## 📐 Architecture (Start Here!)
+
+> **IMPORTANT:** The new architecture document supersedes all previous architecture docs.
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| **[Architecture v2.0](docs/ARCHITECTURE_V2.md)** | **Authoritative architecture document** | ✅ **Current** |
+
+**Key concepts in v2.0:**
+- **Tenant** → VPC, Subnets, Security Groups (shared networking)
+- **Stack** → Folder containing `stack.yaml` + `services/`
+- **Service** → Folder containing `service.yaml` + component YAMLs
+- **Component** → Individual AWS resource (ECS, RDS, SQS, etc.)
+
+**Example Stack Structure:**
+```
+notification-platform/
+├── stack.yaml
+└── services/
+    ├── api/
+    │   ├── service.yaml
+    │   ├── ecs.yaml
+    │   └── resources.yaml
+    └── worker/
+        ├── service.yaml
+        └── lambda.yaml
+```
+
+See [examples/notification-platform/](examples/notification-platform/) for a complete example.
+
+---
+
+## 🚀 Quick Start
 
 New to Panka? Start with these guides:
 
@@ -29,12 +61,13 @@ New to Panka? Start with these guides:
 
 ### Core Concepts
 
-| Document | Purpose |
-|----------|---------|
-| [Architecture Overview](docs/ARCHITECTURE.md) | System architecture and design |
-| [CLI Architecture](docs/CLI_ARCHITECTURE.md) | Command-line interface design |
-| [State and Locking](docs/STATE_AND_LOCKING.md) | How state management works |
-| [Multi-Tenancy](docs/MULTI_TENANCY.md) | Multi-tenant architecture |
+| Document | Purpose | Status |
+|----------|---------|--------|
+| **[Architecture v2.0](docs/ARCHITECTURE_V2.md)** | **Tenant → Stack → Service hierarchy** | ✅ **Current** |
+| [CLI Architecture](docs/CLI_ARCHITECTURE.md) | Command-line interface design | Current |
+| [State and Locking](docs/STATE_AND_LOCKING.md) | How state management works | Current |
+| [Multi-Tenancy](docs/MULTI_TENANCY.md) | Multi-tenant architecture | Current |
+| [Architecture Overview](docs/ARCHITECTURE.md) | System architecture (v1) | ⚠️ Superseded |
 
 ### Reference Documentation
 

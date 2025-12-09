@@ -78,9 +78,8 @@ type Planner struct {
 
 // NewPlanner creates a new deployment planner
 func NewPlanner() *Planner {
-	log, _ := logger.NewDevelopment()
 	return &Planner{
-		logger: log,
+		logger: logger.Global(),
 		sorter: NewSorter(),
 	}
 }

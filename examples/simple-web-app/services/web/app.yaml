@@ -1,0 +1,63 @@
+# Web Application Container (Nginx)
+# Uses a well-known Docker image for testing
+
+---
+apiVersion: panka.io/v1
+kind: MicroService
+metadata:
+  name: nginx-web
+  service: web
+  stack: simple-web-app
+  labels:
+    tier: frontend
+    app: nginx
+
+spec:
+  # Using official nginx image from Docker Hub
+  image:
+    repository: nginx
+    tag: "1.25-alpine"
+    pullPolicy: IfNotPresent
+
+  # Fargate runtime configuration
+  runtime:
+    platform: fargate
+    launchType: FARGATE
+    networkMode: awsvpc
+
+  # Container ports
+  ports:
+    - port: 80
+      protocol: TCP
+      name: http
+    - port: 443
+      protocol: TCP
+      name: https
+
+  # Resource requirements (Fargate-compatible)
+  # Note: These map to Fargate CPU/Memory combinations
+  # 0.25 vCPU = 256, 0.5 vCPU = 512, etc.
+  
+  # Environment variables
+  environment:
+    - name: NGINX_HOST
+      value: localhost
+    - name: NGINX_PORT
+      value: "80"
+
+  # Health check configuration
+  healthCheck:
+    enabled: true
+    path: /
+    port: 80
+    protocol: HTTP
+    initialDelaySeconds: 10
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  # Dependencies - web server depends on the backend resources
+  dependsOn:
+    - sessions      # Wait for DynamoDB table
+    - task-queue    # Wait for SQS queue
+

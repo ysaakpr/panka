@@ -1,0 +1,131 @@
+# =============================================================================
+# WORKER SERVICE COMPONENTS
+# =============================================================================
+# Lambda function and DynamoDB table for notification processing.
+# =============================================================================
+
+---
+# =============================================================================
+# Lambda Function - Notification Processor
+# =============================================================================
+apiVersion: components.panka.io/v1
+kind: Lambda
+metadata:
+  name: notification-processor
+  service: worker
+  stack: notification-platform
+  description: "Processes notifications from SQS queue"
+
+spec:
+  runtime: nodejs18.x
+  handler: index.handler
+  
+  # Code location
+  code:
+    s3Bucket: "${ENVIRONMENT}-lambda-deployments"
+    s3Key: "notification-platform/notification-processor/${VERSION}.zip"
+
+  # Resource allocation
+  memory: "${MEMORY}"
+  timeout: "${TIMEOUT}"
+
+  # Environment variables
+  environment:
+    ENV: "${ENVIRONMENT}"
+    LOG_LEVEL: "${LOG_LEVEL}"
+    BATCH_SIZE: "${BATCH_SIZE}"
+    # DynamoDB table for tracking
+    STATUS_TABLE:
+      valueFrom:
+        component: delivery-status-table
+        output: tableName
+
+  # SQS trigger
+  triggers:
+    - type: sqs
+      source:
+        component: notification-queue
+      batchSize: "${BATCH_SIZE}"
+
+  # IAM permissions (auto-generated based on resources)
+  # Lambda automatically gets:
+  # - SQS: ReceiveMessage, DeleteMessage on notification-queue
+  # - DynamoDB: PutItem, UpdateItem, GetItem on delivery-status-table
+  # - CloudWatch: CreateLogGroup, CreateLogStream, PutLogEvents
+
+  # VPC configuration (inherited from tenant)
+  # Lambda runs in private subnets with NAT gateway access
+  vpc:
+    enabled: true
+    # Subnets and security groups inherited from tenant
+
+  # Reserved concurrency
+  reservedConcurrentExecutions: 100
+
+  dependsOn:
+    - delivery-status-table
+
+---
+# =============================================================================
+# DynamoDB Table - Delivery Status
+# =============================================================================
+apiVersion: components.panka.io/v1
+kind: DynamoDB
+metadata:
+  name: delivery-status-table
+  service: worker
+  stack: notification-platform
+  description: "Tracks notification delivery status"
+
+spec:
+  billingMode: PAY_PER_REQUEST
+
+  hashKey:
+    name: notificationId
+    type: S
+
+  rangeKey:
+    name: timestamp
+    type: N
+
+  # Global Secondary Index for querying by status
+  globalSecondaryIndexes:
+    - name: StatusIndex
+      hashKey:
+        name: status
+        type: S
+      rangeKey:
+        name: timestamp
+        type: N
+      projection: ALL
+
+    - name: RecipientIndex
+      hashKey:
+        name: recipientId
+        type: S
+      rangeKey:
+        name: timestamp
+        type: N
+      projection: KEYS_ONLY
+
+  # TTL for automatic cleanup
+  ttl:
+    enabled: true
+    attributeName: expiresAt
+
+  # Encryption
+  encryption:
+    enabled: true
+    # Uses AWS managed key
+
+  # Point-in-time recovery for data protection
+  pointInTimeRecovery: true
+
+  # Stream for real-time updates (optional)
+  stream:
+    enabled: true
+    viewType: NEW_AND_OLD_IMAGES
+
+  tags:
+    purpose: "delivery-tracking"
+

@@ -11,8 +11,11 @@ backend:
 
 # Logging configuration
 log:
-  level: info      # debug, info, warn, error
-  format: console  # console, json
+  level: info          # debug, info, warn, error
+  format: console      # console (with colors), json
+  file: panka.log      # Log file path (relative to working directory or absolute)
+  enable_file: true    # Write logs to file
+  enable_stdout: false  # Also print logs to console (with colors)
 
 # Tenant mode (multi-tenant isolation)
 tenant:

@@ -15,9 +15,8 @@ type Sorter struct {
 
 // NewSorter creates a new graph sorter
 func NewSorter() *Sorter {
-	log, _ := logger.NewDevelopment()
 	return &Sorter{
-		logger: log,
+		logger: logger.Global(),
 	}
 }
 

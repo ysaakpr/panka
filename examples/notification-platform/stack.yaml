@@ -1,0 +1,72 @@
+# =============================================================================
+# STACK: notification-platform
+# =============================================================================
+# This stack provides notification services for email, SMS, and push notifications.
+#
+# Networking is inherited from tenant configuration:
+#   - VPC, subnets, NAT gateway defined at tenant level
+#   - All services share the same networking
+#   - Services can communicate with each other automatically
+#
+# Folder Structure:
+#   notification-platform/
+#   ├── stack.yaml                 <- You are here
+#   └── services/
+#       ├── api/                   <- API service
+#       │   ├── service.yaml
+#       │   ├── ecs.yaml
+#       │   └── resources.yaml
+#       ├── worker/                <- Worker service
+#       │   ├── service.yaml
+#       │   └── lambda.yaml
+#       └── scheduler/             <- Scheduler service
+#           ├── service.yaml
+#           └── eventbridge.yaml
+# =============================================================================
+
+apiVersion: core.panka.io/v1
+kind: Stack
+metadata:
+  name: notification-platform
+  tenant: notifications-team       # Links to tenant (networking comes from here)
+  description: "Notification platform for sending emails, SMS, and push notifications"
+  labels:
+    environment: production
+    team: notifications
+    cost-center: platform-engineering
+
+spec:
+  # Provider configuration (can be inherited from tenant)
+  provider:
+    name: aws
+    region: us-east-1
+
+  # Stack-level variables (available to all services)
+  variables:
+    ENVIRONMENT: production
+    LOG_LEVEL: info
+    DOMAIN: notifications.example.com
+    VERSION: "1.0.0"
+  
+  # Optional: Override security group rules (adds to tenant defaults)
+  # The tenant already provides:
+  #   - VPC with public/private subnets
+  #   - NAT Gateway for outbound internet access
+  #   - Default security group allowing internal traffic
+  #
+  # Here we add stack-specific ingress rules:
+  networking:
+    securityGroup:
+      ingress:
+        # Allow HTTPS from internet (for ALB)
+        - port: 443
+          protocol: tcp
+          cidrBlocks: ["0.0.0.0/0"]
+          description: "HTTPS from internet"
+        
+        # Allow HTTP for redirect (optional)
+        - port: 80
+          protocol: tcp
+          cidrBlocks: ["0.0.0.0/0"]
+          description: "HTTP redirect to HTTPS"
+

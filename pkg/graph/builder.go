@@ -16,9 +16,8 @@ type Builder struct {
 
 // NewBuilder creates a new graph builder
 func NewBuilder() *Builder {
-	log, _ := logger.NewDevelopment()
 	return &Builder{
-		logger: log,
+		logger: logger.Global(),
 	}
 }
 

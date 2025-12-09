@@ -1,0 +1,120 @@
+# =============================================================================
+# SCHEDULER SERVICE COMPONENTS
+# =============================================================================
+# EventBridge rules and Lambda functions for scheduled tasks.
+# =============================================================================
+
+---
+# =============================================================================
+# Lambda Function - Scheduled Notification Handler
+# =============================================================================
+apiVersion: components.panka.io/v1
+kind: Lambda
+metadata:
+  name: scheduled-notification-handler
+  service: scheduler
+  stack: notification-platform
+  description: "Processes scheduled notifications"
+
+spec:
+  runtime: nodejs18.x
+  handler: scheduled.handler
+
+  code:
+    s3Bucket: "${ENVIRONMENT}-lambda-deployments"
+    s3Key: "notification-platform/scheduled-notification-handler/${VERSION}.zip"
+
+  memory: "256"
+  timeout: "60"
+
+  environment:
+    ENV: "${ENVIRONMENT}"
+    LOG_LEVEL: "${LOG_LEVEL}"
+    # Reference queue from api service
+    QUEUE_URL:
+      valueFrom:
+        component: notification-queue  # From api service
+        output: queueUrl
+
+  # EventBridge trigger (every minute)
+  triggers:
+    - type: eventbridge
+      schedule: "rate(1 minute)"
+      description: "Check for scheduled notifications"
+
+  vpc:
+    enabled: true
+
+---
+# =============================================================================
+# Lambda Function - Cleanup Handler
+# =============================================================================
+apiVersion: components.panka.io/v1
+kind: Lambda
+metadata:
+  name: cleanup-handler
+  service: scheduler
+  stack: notification-platform
+  description: "Cleans up old notification data"
+
+spec:
+  runtime: nodejs18.x
+  handler: cleanup.handler
+
+  code:
+    s3Bucket: "${ENVIRONMENT}-lambda-deployments"
+    s3Key: "notification-platform/cleanup-handler/${VERSION}.zip"
+
+  memory: "512"
+  timeout: "900"  # 15 minutes
+
+  environment:
+    ENV: "${ENVIRONMENT}"
+    LOG_LEVEL: "${LOG_LEVEL}"
+    RETENTION_DAYS: "${CLEANUP_RETENTION_DAYS}"
+    BATCH_SIZE: "${BATCH_SIZE}"
+    # Reference DynamoDB table from worker service
+    STATUS_TABLE:
+      valueFrom:
+        component: delivery-status-table  # From worker service
+        output: tableName
+
+  # EventBridge trigger (daily at 3am UTC)
+  triggers:
+    - type: eventbridge
+      schedule: "cron(0 3 * * ? *)"
+      description: "Daily cleanup of old notification data"
+
+  vpc:
+    enabled: true
+
+---
+# =============================================================================
+# SNS Topic for Notifications (Optional)
+# =============================================================================
+apiVersion: components.panka.io/v1
+kind: SNS
+metadata:
+  name: notification-alerts
+  service: scheduler
+  stack: notification-platform
+  description: "Alerts for notification system events"
+
+spec:
+  displayName: "Notification Platform Alerts"
+
+  # Encryption
+  encryption:
+    enabled: true
+
+  # Subscriptions can be added via console or additional config
+  # Example subscriptions:
+  # subscriptions:
+  #   - protocol: email
+  #     endpoint: alerts@example.com
+  #   - protocol: lambda
+  #     endpoint: ${alert-handler.arn}
+
+  tags:
+    purpose: "system-alerts"
+

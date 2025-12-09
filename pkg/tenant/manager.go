@@ -25,9 +25,8 @@ type RegistryBackend interface {
 
 // NewManager creates a new tenant manager
 func NewManager(backend RegistryBackend) *Manager {
-	log, _ := logger.NewDevelopment()
 	return &Manager{
-		logger:  log,
+		logger:  logger.Global(),
 		backend: backend,
 	}
 }
@@ -98,10 +97,31 @@ func (m *Manager) CreateTenant(ctx context.Context, req *CreateTenantRequest) (*
 	if req.MaxStacks == 0 {
 		req.MaxStacks = 100
 	}
-	if req.MaxServices == 0 {
-		req.MaxServices = 500
+	if req.MaxServicesPerStack == 0 {
+		req.MaxServicesPerStack = 20
 	}
-	
+	if req.MaxResourcesPerService == 0 {
+		req.MaxResourcesPerService = 50
+	}
+
+	// Set AWS region default
+	awsRegion := req.AWSRegion
+	if awsRegion == "" {
+		awsRegion = m.registry.Metadata.Region
+	}
+
+	// Generate networking config if VPC CIDR provided
+	var networking NetworkingConfig
+	if req.VPCCidr != "" {
+		networking = DefaultNetworkingConfig(awsRegion, req.VPCCidr, req.AvailabilityZones)
+		if req.EnableNATGateway {
+			networking.NATGateway.Enabled = true
+			if req.NATGatewayType != "" {
+				networking.NATGateway.Type = req.NATGatewayType
+			}
+		}
+	}
+
 	// Create tenant
 	tenant := &Tenant{
 		ID:          req.Name,
@@ -110,37 +130,43 @@ func (m *Manager) CreateTenant(ctx context.Context, req *CreateTenantRequest) (*
 		Status:      StatusActive,
 		Created:     time.Now(),
 		Updated:     time.Now(),
-		
+
 		Credentials: Credentials{
 			Hash:        creds.Hash,
 			Algorithm:   "bcrypt",
 			Rotations:   0,
 			LastRotated: nil,
 		},
-		
+
 		Storage: StorageConfig{
 			Prefix:  fmt.Sprintf("tenants/%s", req.Name),
 			Version: req.Version,
 			Path:    fmt.Sprintf("tenants/%s/%s", req.Name, req.Version),
 		},
-		
+
 		Locks: LockConfig{
 			Prefix: fmt.Sprintf("tenant:%s", req.Name),
 		},
-		
+
 		AWS: AWSConfig{
-			AccountID: req.AWSAccountID,
-			Region:    m.registry.Metadata.Region,
+			AccountID:     req.AWSAccountID,
+			Region:        awsRegion,
+			AssumeRoleArn: req.AWSAssumeRoleArn,
 		},
-		
+
+		Networking: networking,
+
 		Limits: Limits{
-			CostTracking:     req.CostTracking,
-			MonthlyCostLimit: req.MonthlyCostLimit,
-			MaxStacks:        req.MaxStacks,
-			MaxServices:      req.MaxServices,
+			CostTracking:           req.CostTracking,
+			MonthlyCostLimit:       req.MonthlyCostLimit,
+			MaxStacks:              req.MaxStacks,
+			MaxServicesPerStack:    req.MaxServicesPerStack,
+			MaxResourcesPerService: req.MaxResourcesPerService,
 		},
-		
-		Metadata: req.Metadata,
+
+		DefaultTags:      req.DefaultTags,
+		AllowedResources: req.AllowedResources,
+		Metadata:         req.Metadata,
 	}
 	
 	// Add to registry

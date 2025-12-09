@@ -2,6 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/fatih/color"
@@ -19,10 +21,14 @@ var (
 
 // planCmd represents the plan command
 var planCmd = &cobra.Command{
-	Use:   "plan [file]",
+	Use:   "plan <path>",
 	Short: "Generate and show deployment plan",
 	Long: `Generate a deployment plan showing what resources will be created,
 updated, or deleted.
+
+Supports both:
+  • Stack folders (new structure with services/)
+  • Single YAML files (legacy)
 
 The plan command:
   • Parses your infrastructure configuration
@@ -30,14 +36,19 @@ The plan command:
   • Determines deployment order
   • Shows estimated changes
 
-No actual changes are made - this is a dry-run to preview actions.`,
+No actual changes are made - this is a dry-run to preview actions.
+
+Examples:
+  panka plan ./my-stack
+  panka plan ./my-stack --detailed
+  panka plan infrastructure.yaml`,
 	Args: cobra.ExactArgs(1),
 	RunE: runPlan,
 }
 
 func init() {
 	rootCmd.AddCommand(planCmd)
-	
+
 	planCmd.Flags().BoolVarP(&planDetailed, "detailed", "d", false, "show detailed resource information")
 	planCmd.Flags().StringVarP(&planFile, "out", "o", "", "write plan to file")
 }
@@ -47,18 +58,53 @@ func runPlan(cmd *cobra.Command, args []string) error {
 	cyan := color.New(color.FgCyan)
 	yellow := color.New(color.FgYellow)
 
-	file := args[0]
-	
-	cyan.Printf("\n📋 Generating deployment plan for: %s\n\n", file)
+	path := args[0]
+
+	// Get absolute path
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("failed to resolve path: %w", err)
+	}
+
+	cyan.Printf("\n📋 Generating deployment plan for: %s\n\n", absPath)
 
 	log := logger.Global()
 
+	// Check if path is a folder or file
+	info, err := os.Stat(absPath)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("path not found: %s", absPath)
+	}
+
+	var result *parser.ParseResult
+
 	// Step 1: Parse configuration
 	fmt.Print("🔍 Parsing configuration... ")
-	p := parser.NewParser()
-	result, err := p.ParseFile(file)
-	if err != nil {
-		return fmt.Errorf("failed to parse file: %w", err)
+	if info.IsDir() {
+		// Parse as stack folder
+		fp := parser.NewFolderParser()
+		folderResult, err := fp.ParseStackFolder(absPath)
+		if err != nil {
+			return fmt.Errorf("failed to parse stack folder: %w", err)
+		}
+
+		// Convert to ParseResult
+		result = &parser.ParseResult{
+			Stack:      folderResult.Stack,
+			Components: folderResult.AllComponents,
+		}
+		for _, svc := range folderResult.Services {
+			if svc.Service != nil {
+				result.Services = append(result.Services, svc.Service)
+			}
+		}
+	} else {
+		// Parse as single file (legacy)
+		p := parser.NewParser()
+		result, err = p.ParseFile(absPath)
+		if err != nil {
+			return fmt.Errorf("failed to parse file: %w", err)
+		}
 	}
 	green.Println("✓")
 

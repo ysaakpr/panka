@@ -1,0 +1,151 @@
+# =============================================================================
+# API SERVICE RESOURCES
+# =============================================================================
+# Supporting resources for the API service:
+#   - RDS PostgreSQL database
+#   - SQS queue for async processing
+#   - S3 bucket for file uploads
+# =============================================================================
+
+---
+# =============================================================================
+# RDS PostgreSQL Database
+# =============================================================================
+apiVersion: components.panka.io/v1
+kind: RDS
+metadata:
+  name: api-db
+  service: api
+  stack: notification-platform
+  description: "PostgreSQL database for notification metadata"
+
+spec:
+  engine:
+    type: postgres
+    version: "15"
+    parameters:
+      max_connections: "200"
+      shared_buffers: "256MB"
+
+  instance:
+    class: db.t3.medium
+    storage:
+      type: gp3
+      allocatedGB: 100
+      maxAllocatedGB: 500
+      iops: 3000
+    multiAZ: true
+
+  database:
+    name: "${DB_NAME}"
+    username: dbadmin
+    passwordSecret:
+      ref: "${ENVIRONMENT}/notification-platform/db-password"
+    port: 5432
+
+  backup:
+    enabled: true
+    retentionDays: 7
+    preferredWindow: "03:00-04:00"
+
+  maintenance:
+    preferredWindow: "mon:04:00-mon:05:00"
+    autoMinorVersionUpgrade: true
+
+  monitoring:
+    enhancedMonitoring: true
+    monitoringInterval: 60  # seconds
+
+  # Networking inherited from tenant:
+  # - Placed in private subnets
+  # - Security group allows access from api-server
+
+---
+# =============================================================================
+# SQS Queue for Async Processing
+# =============================================================================
+apiVersion: components.panka.io/v1
+kind: SQS
+metadata:
+  name: notification-queue
+  service: api
+  stack: notification-platform
+  description: "Queue for async notification processing"
+
+spec:
+  type: standard
+  messageRetentionPeriod: 345600  # 4 days in seconds
+  visibilityTimeout: 300          # 5 minutes
+  receiveWaitTime: 20             # Long polling
+
+  deadLetterQueue:
+    enabled: true
+    maxReceiveCount: 3
+
+  encryption:
+    enabled: true
+    # Uses AWS managed key by default
+
+  tags:
+    purpose: "notification-processing"
+
+---
+# =============================================================================
+# S3 Bucket for File Uploads
+# =============================================================================
+apiVersion: components.panka.io/v1
+kind: S3
+metadata:
+  name: uploads-bucket
+  service: api
+  stack: notification-platform
+  description: "S3 bucket for notification attachments"
+
+spec:
+  bucket:
+    acl: private
+    forceDestroy: false
+
+  versioning:
+    enabled: true
+
+  encryption:
+    enabled: true
+    algorithm: AES256
+
+  lifecycle:
+    - id: archive-old-uploads
+      enabled: true
+      prefix: "uploads/"
+      transitions:
+        - days: 30
+          storageClass: STANDARD_IA
+        - days: 90
+          storageClass: GLACIER
+      expiration:
+        days: 365
+
+    - id: cleanup-temp
+      enabled: true
+      prefix: "temp/"
+      expiration:
+        days: 7
+
+  cors:
+    allowedOrigins:
+      - "https://${DOMAIN}"
+      - "https://admin.${DOMAIN}"
+    allowedMethods:
+      - GET
+      - POST
+      - PUT
+    allowedHeaders:
+      - "*"
+    maxAgeSeconds: 3600
+
+  publicAccessBlock:
+    blockPublicAcls: true
+    blockPublicPolicy: true
+    ignorePublicAcls: true
+    restrictPublicBuckets: true
+

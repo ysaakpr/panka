@@ -1,0 +1,32 @@
+# =============================================================================
+# SERVICE: worker
+# =============================================================================
+# The worker service processes notifications from the queue and sends them
+# via various channels (email, SMS, push).
+#
+# Components:
+#   - notification-processor (Lambda) - Processes queue messages
+#   - delivery-status-table (DynamoDB) - Tracks delivery status
+# =============================================================================
+
+apiVersion: core.panka.io/v1
+kind: Service
+metadata:
+  name: worker
+  stack: notification-platform
+  description: "Worker service for processing and sending notifications"
+  labels:
+    tier: backend
+    public: "false"
+
+spec:
+  # Service-level variables
+  variables:
+    BATCH_SIZE: "10"
+    TIMEOUT: "300"
+    MEMORY: "512"
+
+  # This service depends on API service (for queue)
+  dependsOn:
+    - api
+

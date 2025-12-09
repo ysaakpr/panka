@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"path/filepath"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -12,15 +13,19 @@ import (
 // Logger wraps zap logger with additional functionality
 type Logger struct {
 	*zap.Logger
-	sugar *zap.SugaredLogger
+	sugar    *zap.SugaredLogger
+	logFile  *os.File // Keep reference to close on cleanup
 }
 
 // Config holds logger configuration
 type Config struct {
-	Level      string // debug, info, warn, error
-	Format     string // json, console
-	Output     io.Writer
+	Level        string    // debug, info, warn, error
+	Format       string    // json, console
+	Output       io.Writer // Custom output (if set, overrides File)
+	File         string    // Log file path (e.g., "panka.log")
 	EnableCaller bool
+	EnableFile   bool      // Whether to write to file
+	EnableStdout bool      // Whether to also write to stdout
 }
 
 // DefaultConfig returns default logger configuration
@@ -28,8 +33,11 @@ func DefaultConfig() *Config {
 	return &Config{
 		Level:        "info",
 		Format:       "console",
-		Output:       os.Stdout,
+		Output:       nil,
+		File:         "panka.log",
 		EnableCaller: true,
+		EnableFile:   false,
+		EnableStdout: true,
 	}
 }
 
@@ -45,41 +53,80 @@ func New(cfg *Config) (*Logger, error) {
 		return nil, err
 	}
 
-	// Configure encoder
-	var encoderConfig zapcore.EncoderConfig
+	// Configure encoder for console (with colors)
+	consoleEncoderConfig := zap.NewDevelopmentEncoderConfig()
+	consoleEncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	consoleEncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	// Configure encoder for file (no colors, cleaner format)
+	fileEncoderConfig := zap.NewProductionEncoderConfig()
+	fileEncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	fileEncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+
+	// Create encoders
+	var consoleEncoder, fileEncoder zapcore.Encoder
 	if cfg.Format == "json" {
-		encoderConfig = zap.NewProductionEncoderConfig()
+		consoleEncoder = zapcore.NewJSONEncoder(consoleEncoderConfig)
+		fileEncoder = zapcore.NewJSONEncoder(fileEncoderConfig)
 	} else {
-		encoderConfig = zap.NewDevelopmentEncoderConfig()
-		encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		consoleEncoder = zapcore.NewConsoleEncoder(consoleEncoderConfig)
+		fileEncoder = zapcore.NewConsoleEncoder(fileEncoderConfig)
 	}
 
-	// Create encoder
-	var encoder zapcore.Encoder
-	if cfg.Format == "json" {
-		encoder = zapcore.NewJSONEncoder(encoderConfig)
+	// Build cores based on configuration
+	var cores []zapcore.Core
+	var logFile *os.File
+
+	// If custom output is provided, use it
+	if cfg.Output != nil {
+		cores = append(cores, zapcore.NewCore(consoleEncoder, zapcore.AddSync(cfg.Output), level))
 	} else {
-		encoder = zapcore.NewConsoleEncoder(encoderConfig)
+		// Add stdout core if enabled
+		if cfg.EnableStdout {
+			cores = append(cores, zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), level))
+		}
+
+		// Add file core if enabled
+		if cfg.EnableFile && cfg.File != "" {
+			// Resolve file path
+			filePath := cfg.File
+			if !filepath.IsAbs(filePath) {
+				// Use current working directory
+				cwd, err := os.Getwd()
+				if err == nil {
+					filePath = filepath.Join(cwd, filePath)
+				}
+			}
+
+			// Open or create log file
+			logFile, err = os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+			if err != nil {
+				return nil, err
+			}
+
+			cores = append(cores, zapcore.NewCore(fileEncoder, zapcore.AddSync(logFile), level))
+		}
 	}
 
-	// Create core
-	core := zapcore.NewCore(
-		encoder,
-		zapcore.AddSync(cfg.Output),
-		level,
-	)
+	// If no cores, default to stdout
+	if len(cores) == 0 {
+		cores = append(cores, zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), level))
+	}
+
+	// Create tee core to write to multiple outputs
+	core := zapcore.NewTee(cores...)
 
 	// Build logger
 	zapLogger := zap.New(core)
-	
+
 	if cfg.EnableCaller {
 		zapLogger = zapLogger.WithOptions(zap.AddCaller(), zap.AddCallerSkip(1))
 	}
 
 	return &Logger{
-		Logger: zapLogger,
-		sugar:  zapLogger.Sugar(),
+		Logger:  zapLogger,
+		sugar:   zapLogger.Sugar(),
+		logFile: logFile,
 	}, nil
 }
 
@@ -135,6 +182,20 @@ func (l *Logger) Sugar() *zap.SugaredLogger {
 func (l *Logger) Sync() error {
 	_ = l.sugar.Sync()
 	return l.Logger.Sync()
+}
+
+// Close closes the logger and any open file handles
+func (l *Logger) Close() error {
+	_ = l.Sync()
+	if l.logFile != nil {
+		return l.logFile.Close()
+	}
+	return nil
+}
+
+// Desugar returns the underlying zap.Logger
+func (l *Logger) Desugar() *zap.Logger {
+	return l.Logger
 }
 
 // Global logger instance

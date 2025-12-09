@@ -1,0 +1,80 @@
+# Infrastructure resources for the web service
+# These are all resources that Panka can actually deploy
+
+# ---
+# # S3 bucket for static assets
+# apiVersion: panka.io/v1
+# kind: S3
+# metadata:
+#   name: web-assets
+#   service: web
+#   stack: simple-web-app
+#   labels:
+#     purpose: static-assets
+
+# spec:
+#   bucket:
+#     name: ""  # Auto-generated name
+#     acl: private
+#     forceDestroy: true
+#   versioning:
+#     enabled: true
+#   encryption:
+#     enabled: true
+#     algorithm: AES256
+
+---
+# DynamoDB table for session storage
+apiVersion: panka.io/v1
+kind: DynamoDB
+metadata:
+  name: sessions
+  service: web
+  stack: simple-web-app
+  labels:
+    purpose: session-store
+
+spec:
+  tableName: ""  # Auto-generated
+  billingMode: PAY_PER_REQUEST
+  hashKey:
+    name: session_id
+    type: S
+  ttl:
+    enabled: true
+    attributeName: ttl
+
+---
+# SQS queue for async tasks
+apiVersion: panka.io/v1
+kind: SQS
+metadata:
+  name: task-queue
+  service: web
+  stack: simple-web-app
+  labels:
+    purpose: background-tasks
+
+spec:
+  type: standard
+  visibilityTimeout: 60
+  messageRetentionPeriod: 345600  # 4 days
+  deadLetterQueue:
+    enabled: true
+    maxReceiveCount: 3
+
+---
+# SNS topic for notifications
+apiVersion: panka.io/v1
+kind: SNS
+metadata:
+  name: alerts
+  service: web
+  stack: simple-web-app
+  labels:
+    purpose: alerts
+
+spec:
+  displayName: "Web App Alerts"
+  fifoTopic: false
+

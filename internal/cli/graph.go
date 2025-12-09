@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -19,9 +20,13 @@ var (
 
 // graphCmd represents the graph command
 var graphCmd = &cobra.Command{
-	Use:   "graph [file]",
+	Use:   "graph <path>",
 	Short: "Visualize dependency graph",
 	Long: `Generate and visualize the resource dependency graph.
+
+Supports both:
+  • Stack folders (new structure with services/)
+  • Single YAML files (legacy)
 
 Output formats:
   • ascii   - ASCII art (default, prints to console)
@@ -29,16 +34,16 @@ Output formats:
   • mermaid - Mermaid diagram format
 
 Examples:
-  panka graph infrastructure.yaml
-  panka graph infrastructure.yaml --output dot --file graph.dot
-  panka graph infrastructure.yaml --output mermaid --file graph.mmd`,
+  panka graph ./my-stack
+  panka graph ./my-stack --output dot --file graph.dot
+  panka graph infrastructure.yaml --output mermaid`,
 	Args: cobra.ExactArgs(1),
 	RunE: runGraph,
 }
 
 func init() {
 	rootCmd.AddCommand(graphCmd)
-	
+
 	graphCmd.Flags().StringVarP(&graphOutput, "output", "o", "ascii", "output format (ascii, dot, mermaid)")
 	graphCmd.Flags().StringVarP(&graphFile, "file", "f", "", "output file (default: stdout)")
 }
@@ -48,24 +53,58 @@ func runGraph(cmd *cobra.Command, args []string) error {
 	cyan := color.New(color.FgCyan)
 	red := color.New(color.FgRed, color.Bold)
 
-	file := args[0]
-	
-	cyan.Printf("\n📊 Generating dependency graph for: %s\n\n", file)
+	path := args[0]
+
+	// Get absolute path
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("failed to resolve path: %w", err)
+	}
+
+	cyan.Printf("\n📊 Generating dependency graph for: %s\n\n", absPath)
 
 	log := logger.Global()
 
-	// Parse file
-	p := parser.NewParser()
-	result, err := p.ParseFile(file)
-	if err != nil {
-		return fmt.Errorf("failed to parse file: %w", err)
+	// Check if path is a folder or file
+	info, err := os.Stat(absPath)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("path not found: %s", absPath)
 	}
 
-	log.Info("Resources parsed", zap.Int("count", len(result.Components)))
+	var parseResult *parser.ParseResult
+
+	if info.IsDir() {
+		// Parse as stack folder
+		fp := parser.NewFolderParser()
+		folderResult, err := fp.ParseStackFolder(absPath)
+		if err != nil {
+			return fmt.Errorf("failed to parse stack folder: %w", err)
+		}
+
+		// Convert to ParseResult
+		parseResult = &parser.ParseResult{
+			Stack:      folderResult.Stack,
+			Components: folderResult.AllComponents,
+		}
+		for _, svc := range folderResult.Services {
+			if svc.Service != nil {
+				parseResult.Services = append(parseResult.Services, svc.Service)
+			}
+		}
+	} else {
+		// Parse as single file (legacy)
+		p := parser.NewParser()
+		parseResult, err = p.ParseFile(absPath)
+		if err != nil {
+			return fmt.Errorf("failed to parse file: %w", err)
+		}
+	}
+
+	log.Info("Resources parsed", zap.Int("count", len(parseResult.Components)))
 
 	// Build graph
 	builder := graph.NewBuilder()
-	g, err := builder.Build(result)
+	g, err := builder.Build(parseResult)
 	if err != nil {
 		return fmt.Errorf("failed to build graph: %w", err)
 	}

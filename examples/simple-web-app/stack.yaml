@@ -1,0 +1,24 @@
+# Simple Web Application Stack
+# This is a minimal testable stack using nginx
+apiVersion: panka.io/v1
+kind: Stack
+metadata:
+  name: simple-web-app
+  tenant: test-tenant
+  labels:
+    environment: development
+    team: platform
+
+spec:
+  description: "Simple web application for testing Panka deployment"
+  
+  # Provider configuration
+  provider:
+    name: aws
+    region: us-east-1
+  
+  # Variables available to all services
+  variables:
+    environment: development
+    log_level: info
+

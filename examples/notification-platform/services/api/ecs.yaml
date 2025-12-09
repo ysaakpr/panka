@@ -1,0 +1,109 @@
+# =============================================================================
+# API SERVER - ECS Fargate
+# =============================================================================
+# Main API server running on ECS Fargate.
+# 
+# Networking (automatically inherited from tenant):
+#   - Runs in private subnets
+#   - Uses tenant's security group (allows internal traffic)
+#   - Outbound internet via NAT Gateway
+# =============================================================================
+
+apiVersion: components.panka.io/v1
+kind: MicroService
+metadata:
+  name: api-server
+  service: api
+  stack: notification-platform
+  description: "Main API server for notifications"
+
+spec:
+  # Container image
+  image:
+    repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/notification-api
+    tag: "${VERSION}"
+    pullPolicy: Always
+
+  # Runtime configuration
+  runtime:
+    platform: fargate
+    cpu: "${CPU}"
+    memory: "${MEMORY}"
+
+  # Scaling
+  replicas: "${REPLICAS}"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilization: 70
+
+  # Network ports
+  ports:
+    - name: http
+      port: 8080
+      protocol: tcp
+
+  # Health check
+  healthCheck:
+    path: /health
+    port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  # Environment variables
+  environment:
+    - name: ENV
+      value: "${ENVIRONMENT}"
+    - name: PORT
+      value: "${PORT}"
+    - name: LOG_LEVEL
+      value: "${LOG_LEVEL}"
+    - name: DOMAIN
+      value: "${DOMAIN}"
+    
+    # Database connection (from RDS component output)
+    - name: DB_HOST
+      valueFrom:
+        component: api-db
+        output: endpoint
+    - name: DB_PORT
+      value: "5432"
+    - name: DB_NAME
+      value: "${DB_NAME}"
+    
+    # Queue URL (from SQS component output)
+    - name: QUEUE_URL
+      valueFrom:
+        component: notification-queue
+        output: queueUrl
+    
+    # S3 bucket (from S3 component output)
+    - name: UPLOADS_BUCKET
+      valueFrom:
+        component: uploads-bucket
+        output: bucketName
+
+  # Secrets from AWS Secrets Manager
+  secrets:
+    - name: DB_PASSWORD
+      secretRef: "${ENVIRONMENT}/notification-platform/db-password"
+      envVar: DB_PASSWORD
+    - name: API_KEY
+      secretRef: "${ENVIRONMENT}/notification-platform/api-key"
+      envVar: API_KEY
+
+  # Service discovery (for internal service communication)
+  serviceDiscovery:
+    enabled: true
+    namespace: notification-platform
+    name: api
+
+  # Dependencies (ensure these are created first)
+  dependsOn:
+    - api-db
+    - notification-queue
+    - uploads-bucket
+

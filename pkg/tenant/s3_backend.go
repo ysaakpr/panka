@@ -24,7 +24,7 @@ type S3RegistryBackend struct {
 
 // NewS3RegistryBackend creates a new S3 registry backend
 func NewS3RegistryBackend(bucket, region string) (*S3RegistryBackend, error) {
-	log, _ := logger.NewDevelopment()
+	log := logger.Global()
 	
 	// Load AWS config
 	cfg, err := config.LoadDefaultConfig(context.Background(),
@@ -181,7 +181,29 @@ func (sb *S3RegistryBackend) CreateTenantDirectory(ctx context.Context, tenant *
 	}
 	
 	sb.logger.Info("Tenant directory created", zap.String("tenant", tenant.ID))
-	
+
 	return nil
+}
+
+// LoadTenantConfig loads the full tenant configuration from the registry
+func (sb *S3RegistryBackend) LoadTenantConfig(ctx context.Context, tenantID string) (*Tenant, error) {
+	sb.logger.Debug("Loading tenant config",
+		zap.String("tenant_id", tenantID),
+	)
+
+	// Load registry
+	registry, err := sb.LoadRegistry(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load registry: %w", err)
+	}
+
+	// Find tenant
+	for _, t := range registry.Tenants {
+		if t.ID == tenantID {
+			return &t, nil
+		}
+	}
+
+	return nil, fmt.Errorf("tenant not found: %s", tenantID)
 }
 

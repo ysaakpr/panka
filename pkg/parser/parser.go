@@ -25,9 +25,8 @@ type Parser struct {
 
 // NewParser creates a new parser instance
 func NewParser() *Parser {
-	log, _ := logger.NewDevelopment()
 	return &Parser{
-		logger:           log,
+		logger:           logger.Global(),
 		variables:        make(map[string]string),
 		componentOutputs: make(map[string]map[string]string),
 	}

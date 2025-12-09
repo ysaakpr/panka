@@ -1,0 +1,12 @@
+# Web Service Definition
+apiVersion: panka.io/v1
+kind: Service
+metadata:
+  name: web
+  stack: simple-web-app
+  labels:
+    tier: frontend
+
+spec:
+  description: "Simple nginx web server"
+

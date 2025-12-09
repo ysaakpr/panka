@@ -1,0 +1,36 @@
+# =============================================================================
+# SERVICE: api
+# =============================================================================
+# The API service provides REST endpoints for notification management.
+# It receives requests and queues them for processing by the worker service.
+#
+# Components:
+#   - api-server (ECS Fargate) - Main API server
+#   - api-db (RDS PostgreSQL) - Notification metadata
+#   - notification-queue (SQS) - Queue for async processing
+#   - uploads-bucket (S3) - File attachments
+# =============================================================================
+
+apiVersion: core.panka.io/v1
+kind: Service
+metadata:
+  name: api
+  stack: notification-platform
+  description: "REST API for notification management"
+  labels:
+    tier: frontend
+    public: "true"
+
+spec:
+  # Service-level variables
+  variables:
+    PORT: "8080"
+    REPLICAS: "3"
+    MEMORY: "512Mi"
+    CPU: "256m"
+    DB_NAME: "notifications"
+
+  # This service depends on worker service (optional, for documentation)
+  # Services in the same stack can always communicate regardless
+  dependsOn: []
+

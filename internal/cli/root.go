@@ -47,6 +47,12 @@ Features:
 
 // Execute runs the root command
 func Execute() error {
+	// Ensure logger is synced on exit
+	defer func() {
+		if logger.Global() != nil {
+			_ = logger.Global().Sync()
+		}
+	}()
 	return rootCmd.Execute()
 }
 
@@ -102,29 +108,56 @@ func initConfig() {
 
 // initLogger initializes the global logger
 func initLogger() {
-	var log *logger.Logger
-	var err error
-
+	// Read configuration from viper
+	level := viper.GetString("log.level")
 	format := viper.GetString("log.format")
+	logFile := viper.GetString("log.file")
+	enableFile := viper.GetBool("log.enable_file")
+	enableStdout := viper.GetBool("log.enable_stdout")
 
-	if format == "json" {
-		log, err = logger.NewProduction()
-	} else {
-		log, err = logger.NewDevelopment()
+	// Set defaults if not configured
+	if level == "" {
+		level = "info"
+	}
+	if format == "" {
+		format = "console"
+	}
+	if logFile == "" {
+		logFile = "panka.log"
+	}
+	// Default: stdout enabled, file disabled (unless explicitly configured)
+	if !viper.IsSet("log.enable_stdout") {
+		enableStdout = true
 	}
 
+	// Create logger config
+	cfg := &logger.Config{
+		Level:        level,
+		Format:       format,
+		File:         logFile,
+		EnableFile:   enableFile,
+		EnableStdout: enableStdout,
+		EnableCaller: true,
+	}
+
+	log, err := logger.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err)
 		os.Exit(1)
 	}
 
 	logger.SetGlobal(log)
-	
-	level := viper.GetString("log.level")
-	logger.Global().WithFields(
-		zap.String("level", level),
-		zap.String("format", format),
-	).Debug("Logger initialized")
+
+	// Log initialization details
+	if enableFile {
+		logger.Global().WithFields(
+			zap.String("level", level),
+			zap.String("format", format),
+			zap.String("file", logFile),
+			zap.Bool("file_enabled", enableFile),
+			zap.Bool("stdout_enabled", enableStdout),
+		).Info("Logger initialized with file output")
+	}
 }
 
 // GetTenantConfig returns tenant configuration from flags/config

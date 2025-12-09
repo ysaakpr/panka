@@ -70,8 +70,9 @@ type Metadata struct {
 	Description string            `yaml:"description,omitempty"`
 	Labels      map[string]string `yaml:"labels,omitempty"`
 	Annotations map[string]string `yaml:"annotations,omitempty"`
-	
+
 	// Hierarchical references
+	Tenant  string `yaml:"tenant,omitempty"`
 	Stack   string `yaml:"stack,omitempty"`
 	Service string `yaml:"service,omitempty"`
 }

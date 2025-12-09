@@ -1,0 +1,32 @@
+# =============================================================================
+# SERVICE: scheduler
+# =============================================================================
+# The scheduler service handles scheduled/recurring notifications and
+# maintenance tasks.
+#
+# Components:
+#   - scheduled-notification-handler (Lambda) - Processes scheduled notifications
+#   - cleanup-handler (Lambda) - Cleans up old data
+#   - schedule rules (EventBridge) - Cron triggers
+# =============================================================================
+
+apiVersion: core.panka.io/v1
+kind: Service
+metadata:
+  name: scheduler
+  stack: notification-platform
+  description: "Scheduler service for timed notifications and maintenance"
+  labels:
+    tier: backend
+    public: "false"
+
+spec:
+  # Service-level variables
+  variables:
+    CLEANUP_RETENTION_DAYS: "90"
+    BATCH_SIZE: "100"
+
+  # Depends on worker service (uses same DynamoDB table)
+  dependsOn:
+    - worker
+

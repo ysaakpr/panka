@@ -69,24 +69,36 @@ type Config struct {
 type ResourceOptions struct {
 	// Tenant ID for multi-tenancy
 	TenantID string
-	
+
 	// Stack name
 	StackName string
-	
+
 	// Service name
 	ServiceName string
-	
+
 	// Tags to apply to the resource
 	Tags map[string]string
-	
+
 	// Timeout for the operation
 	Timeout time.Duration
-	
+
 	// DryRun simulates the operation without making changes
 	DryRun bool
-	
+
 	// Force forces the operation even if validation fails
 	Force bool
+}
+
+// Options is a simplified options struct for provider operations
+type Options struct {
+	// DryRun simulates the operation without making changes
+	DryRun bool
+
+	// Tags to apply to resources
+	Tags map[string]string
+
+	// Timeout for the operation
+	Timeout time.Duration
 }
 
 // ResourceResult contains the result of a resource operation

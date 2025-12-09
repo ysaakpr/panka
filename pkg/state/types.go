@@ -184,3 +184,29 @@ func (s *State) ResourceCount() int {
 	return len(s.Resources)
 }
 
+// ListResources returns a slice of all resources in the state
+func (s *State) ListResources() []*Resource {
+	if s == nil || s.Resources == nil {
+		return nil
+	}
+	resources := make([]*Resource, 0, len(s.Resources))
+	for _, res := range s.Resources {
+		resources = append(resources, res)
+	}
+	return resources
+}
+
+// ListResourcesByType returns resources filtered by type
+func (s *State) ListResourcesByType(resourceType string) []*Resource {
+	if s == nil || s.Resources == nil {
+		return nil
+	}
+	var resources []*Resource
+	for _, res := range s.Resources {
+		if res.Type == resourceType {
+			resources = append(resources, res)
+		}
+	}
+	return resources
+}
+
